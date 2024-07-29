@@ -32,7 +32,7 @@ Create a folder named __"Raw_Spatial_Data"__. Inside that folder create two more
 Following data must be downloaded:
 * [GEBCO Gridded Bathymetry Data](https://download.gebco.net/) using the download tool. Select a larger area around your study region. Set a tick for a GeoTIFF file under "Grid" and download the file from the basket. Put the file into the folder __"gebco"__ and name it *gebco_cutout.tif*. This data provides the elevation in each pixel.
 * [CORINE land cover global dataset](https://zenodo.org/records/3939050) from zenodo the file named *PROBAV_LC100_global_v3.0.1_2019-nrt_Discrete-Classification-map_EPSG-4326.tif*. Leave the name as it is and put it in the __"Raw_Spatial_Data"__ folder. :warning: Attention: the file size is 1.7 GB
-* [OpenStreetMap Shapefile](https://download.geofabrik.de/) of the country where your study region is located. Click on the relevant continent and then country to download the ´.shp.zip´. Unzip and put the country folder inside the __"OSM"__-folder.
+* [OpenStreetMap Shapefile](https://download.geofabrik.de/) of the country where your study region is located. Click on the relevant continent and then country to download the ´.shp.zip´. Somtimes you can go even more granular by clicking on the country. The best is, to use the smallest available area where your study region is still inside to save storage space. Be aware of the files naming. Unzip and put the downloaded OSM data folder inside the __"OSM"__-folder. The OSM data is used to extract railways and roads. Be aware, that this files can quickly become big make the calculation slow. Handle roads with caution. Often there are many roads which can become big files.
 
 
 
@@ -46,7 +46,7 @@ The files are saved to a folder within the __"data"__-folder.
 In the beginning of the script you can select:
 * `only_mainland = ` __0__ (use all polygons of the study region) or __1__ (use only the biggest polygon). This comes in handy when looking at countries with Island like Portugal and you only want to study the mainland of Portugal.
 * `GOAS =` __0__ (don't change, work in progress)
-* `consider_OSM =` __0__ (don't use OSM data in study region) or __1__ (clip OSM data to study region). Currently, only railways are considered.
+* `consider_OSM =` __0__ (don't use OSM data in study region) or __1__ (clip OSM data to study region). Currently, only railways are considered. 
 * `EPSG_manual =` __*'EPSG-Code'*__ (insert EPSG code like 3035 for Europe if you want to set it manually instead of using the calculated UTM zone) or keep it an __*empty string*__
 
 Moreover, you have to select your study region. It has to be an official administrative region from GADM.org:
