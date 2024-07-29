@@ -5,6 +5,11 @@ To do so, multiple steps need to be caried out including a detailed land analysi
 
 # :construction: :warning: Work in progress! :construction_worker:
 
+
+## 0. Files setup
+
+
+
 ## 1. Download the necessary raw spatial data
 Create a folder named __"Raw_Spatial_Data"__. Inside that folder create two more folder named __"gebco"__ and __"OSM"__.
 
