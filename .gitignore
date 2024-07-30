@@ -1,10 +1,11 @@
 *
 !envs
 !envs/requirements.yaml
+!utils
+!utils/legends.py
 !data_exploration.ipynb
 !GLAES_Aachen.ipynb
 !GLAES_Aachen_test_data.ipynb
-!legends.py
 !spatial_data_prep_JOM.py
 !.gitignore
 !README.md
