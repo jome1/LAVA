@@ -42,7 +42,8 @@ The script `spatial_data_prep_JOM.py` performs multiple data preprocessing steps
 * download administrative boundary of the study region from gadm.org using the package pygadm
 * calculate the local UTM zone
 * clip and reproject to local UTM zone OSM railways and roads (roads are also filtered to only consider main roads)
-* clip and reproject land cover data and elevation data. Eelevation data is also co-registered to the land cover data using bilinear resampling. More on working with multiple raster files (resampling and registering): [here](https://pygis.io/docs/e_raster_resample.html)
+* clip and reproject land cover data and elevation data. Elevation data is also co-registered to the land cover data using bilinear resampling. More on working with multiple raster files (resampling and registering): [here](https://pygis.io/docs/e_raster_resample.html)
+
 The files are saved to a folder within the __"data"__-folder named according to the study region.
 
 In the beginning of the script you can select:
