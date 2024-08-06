@@ -41,8 +41,10 @@ The OSM data is used to extract railways and roads. Be aware, that this files ca
 The script `spatial_data_prep_JOM.py` performs multiple data preprocessing steps to facilitate the land analysis and land eligibility study:
 * download administrative boundary of the study region from gadm.org using the package pygadm
 * calculate the local UTM zone
-* clip and reproject to local UTM zone OSM railways, land cover data and elevation data
-The files are saved to a folder within the __"data"__-folder.
+* clip and reproject to local UTM zone OSM railways and roads (roads are also filtered to only consider main roads)
+* clip and reproject land cover data and elevation data. Elevation data is also co-registered to the land cover data using bilinear resampling. More on working with multiple raster files (resampling and registering): [here](https://pygis.io/docs/e_raster_resample.html)
+
+The files are saved to a folder within the __"data"__-folder named according to the study region.
 
 In the beginning of the script you can select:
 * `only_mainland = ` __0__ (use all polygons of the study region) or __1__ (use only the biggest polygon). This comes in handy when looking at countries with Island like Portugal and you only want to study the mainland of Portugal.
