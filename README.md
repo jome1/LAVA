@@ -1,7 +1,7 @@
 # land-analysis-and-eligibility
 
 This repo provides tools to calculate the eligible area in a user defined study region for building renewable energies like solar PV and wind onshore.
-To do so, multiple steps need to be caried out including a detailed land analysis to have a better understanding of the study region.
+First, all needed data is preprocessed to bring it into the right format. This data can be analyzed to get a better understanding of the study region. Finally, the land eligibility analysis is done with [`atlite`](https://github.com/PyPSA/atlite) or [`GLAES`](https://github.com/FZJ-IEK3-VSA/glaes) (GLAES does not work fully yet).
 
 # :construction: :warning: Work in progress! :construction_worker:
 
