@@ -8,9 +8,9 @@ Changed on Wed Jul 24
 
 spatial_data_prep.py
 
-This script prepares raw spatial data for land exclusion in GLAES and hexagon preparation in SPIDER.
+This script prepares raw spatial data for land exclusion in GLAES or ATLITE.
 The raw inputs should be downloaded to /Raw_Spatial_Data before execution.
-The outputs are saved in /Inputs_Glaes/data and /Inputs_Spider/data respectively.
+The outputs are saved in /data.
 
 compare boundaries between different data sources: https://www.geoboundaries.org/visualize.html?country=DEU&mainSource=OSM-Boundaries&comparisonSource=geoBoundaries+%28Open%29&mainLevel=2&comparisonLevel=2
 This script uses administrative boundries from GADM.org via pygadm
@@ -33,9 +33,9 @@ from utils.data_preprocessing import *
 #https://www.earthenv.org/topography
 
 #-------data config------- 
-consider_OSM_railways = 1
+consider_OSM_railways = 0
 consider_OSM_roads = 0
-consider_airports = 1 
+consider_airports = 0 
 EPSG_manual = ''  #if None use empty string
 #----------------------------
 ############### Define study region ############### use geopackage from gadm.org to inspect in QGIS
@@ -164,6 +164,11 @@ try:
     dem_file = richdem.LoadGDAL(os.path.join(glaes_output_dir, f'DEM_{region_name_clean}_EPSG{EPSG}_resampled.tif'))
     slope = richdem.TerrainAttribute(dem_file, attrib='slope_degrees')
     richdem.SaveGDAL(os.path.join(glaes_output_dir, f'slope_{region_name_clean}_EPSG{EPSG}_resampled.tif'), slope)
+
+    #create slope map (https://www.earthdatascience.org/tutorials/get-slope-aspect-from-digital-elevation-model/)
+    dem_file = richdem.LoadGDAL(os.path.join(glaes_output_dir, f'DEM_{region_name_clean}_EPSG{EPSG}_resampled.tif'))
+    aspect = richdem.TerrainAttribute(dem_file, attrib='aspect')
+    richdem.SaveGDAL(os.path.join(glaes_output_dir, f'aspect_{region_name_clean}_EPSG{EPSG}_resampled.tif'), aspect)
 
 except:
     print('Input shapes do not overlap raster. DEM raster for study region is not correct')
