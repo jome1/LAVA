@@ -1,4 +1,4 @@
-# LAAVA - *L*and *A*nalysis *A*nd a*VA*ilability
+# LAVA - *L*and *A*nalysis and a*VA*ilability
 
 This repo provides tools to calculate the available area in a user defined study region for building renewable energies like solar PV and wind onshore.
 First, all needed data is preprocessed to bring it into the right format. This data can be analyzed to get a better understanding of the study region. Finally, the land eligibility analysis is done with [`atlite`](https://github.com/PyPSA/atlite) or [`GLAES`](https://github.com/FZJ-IEK3-VSA/glaes) (GLAES does not work fully yet).
@@ -9,7 +9,7 @@ First, all needed data is preprocessed to bring it into the right format. This d
 ## 0. Files setup
 __a) clone the repository:__
 
-`% git clone https://github.com/jome1/LAAVA.git`
+`% git clone https://github.com/jome1/LAVA.git`
 
 After cloning, navigate to the top-level folder of the repo.
 
@@ -21,7 +21,7 @@ The Python package requirements to use these tools are in the `requirements.yaml
 
 Then activate this new environment using
 
-`conda activate laava`
+`conda activate lava`
 
 You are now ready to run the scripts in this repository.
 
@@ -34,7 +34,7 @@ Following data must be downloaded:
 * [CORINE land cover global dataset](https://zenodo.org/records/3939050) from zenodo the file named __*PROBAV_LC100_global_v3.0.1_2019-nrt_Discrete-Classification-map_EPSG-4326.tif*__. Leave the name as it is and put it in the __"Raw_Spatial_Data"__ folder. :warning: Attention: the file size is 1.7 GB
 You can also use landcover data from a different data source (then the coloring needs to be adjusted).
 
-Be aware with land cover data: This type of data is good to estimate the potential but is still away from a precise local measurement. The land cover data is derived from satellite images and prone to erros. Note, that there is often only the category "built-up area" which includes all areas with buildings. So, there is no differentiation between urban areas and stand-alone industrial or agricultural complexes, which may not need so much buffer distance to renewable energy installations. For a detailed analysis to derive something like priority zones for renewables, detailed local geospatial data is needed, which has a high resolution and differentiates between areas in a more detailed way. 
+Be aware with land cover data: This type of data is good to estimate the potential but is still away from a precise local measurement. The land cover data is derived from satellite images and prone to erros. Note, that there is often only the category "built-up area" which includes all areas with buildings. So, there is no differentiation between urban areas and stand-alone industrial or agricultural complexes, which may not need so much buffer distance to renewable energy installations. Sometimes even parts of roads are classified as "built-up area" in the land cover data. For a detailed analysis to derive something like priority zones for renewables, detailed local geospatial data is needed, which has a high resolution and differentiates between areas in a more detailed way. 
 
 * [OpenStreetMap Shapefile](https://download.geofabrik.de/) of the country where your study region is located. Click on the relevant continent and then country to download the ´.shp.zip´. Somtimes you can go even more granular by clicking on the country. The best is, to use the smallest available area where your study region is still inside to save storage space. Be aware of the files naming. Unzip and put the downloaded OSM data folder inside the __"OSM"__-folder.  
 The OSM data is used to extract railways, roads and airports. Be aware, that these files can quickly become big making the calculations slow. Handle roads with caution. Often there are many roads which can become big files.
@@ -86,7 +86,9 @@ You need to run this notebook also to get the land use codes and the pixel size 
 
 
 ## 4. Land eligibility
-With the JupyterNotebook `Atlite_custom_region.ipynb` you can finally derive the available area of your study region. Set the name of your region with `region_name` and if necessary also set the EPSG code with `EPSG_custom` if needed or leave it as an empty string. You can then run all cells. You can use the predefined exclusions or customize it yourself.
+With the JupyterNotebook `Atlite_custom_region.ipynb` you can finally derive the available area of your study region. Set the name of your region with `region_name` and if necessary also set the EPSG code with `EPSG_custom` if needed or leave it as an empty string. You can then run all cells. You can use the predefined exclusions or customize it yourself. 
+
+Be aware: if you are not having one of the input files (e.g. north-facing pixels), then comment the lines where this file is used out.
 
 
 
