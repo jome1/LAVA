@@ -5,7 +5,7 @@ First, all needed data is preprocessed to bring it into the right format. This d
 
 Fetch landcover and elevation data via API (ESAworldcover and copernicus_30m):
 * Terrascope API: [API documentation](https://vitobelgium.github.io/terracatalogueclient/api.html), [ESAworldvcover Product](https://docs.terrascope.be/#/DataProducts/WorldCover/WorldCover)
-* [openEO API](https://openeo.org/): [API documentation](https://openeo.org/documentation/1.0/python/#installation](https://open-eo.github.io/openeo-python-client/)
+* [openEO API](https://openeo.org/): [API documentation](https://open-eo.github.io/openeo-python-client/)
 
 # :construction: :warning: Work in progress! :construction_worker:
 
