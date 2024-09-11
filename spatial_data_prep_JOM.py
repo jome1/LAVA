@@ -1,15 +1,12 @@
 # -*- coding: utf-8 -*-
 """
-Created on Wed Oct 18 14:30:10 2023
-Changed on Wed Jul 24
+created August 2024
 
-@author: Alycia Leonard, University of Oxford
-@author: Jonas Meier, Danish Energy Agency (added some more code)
+@author: Jonas Meier
 
-spatial_data_prep.py
 
 This script prepares raw spatial data for land exclusion in GLAES or ATLITE.
-The raw inputs should be downloaded to /Raw_Spatial_Data before execution.
+The raw inputs should be downloaded to /Raw_Spatial_Data before execution. Alternatively, the openEO API can be used to download data automatically.
 The outputs are saved in /data.
 
 compare boundaries between different data sources: https://www.geoboundaries.org/visualize.html?country=DEU&mainSource=OSM-Boundaries&comparisonSource=geoBoundaries+%28Open%29&mainLevel=2&comparisonLevel=2
@@ -24,6 +21,7 @@ import pickle
 import rasterio
 import numpy as np
 import pygadm
+import openeo
 from rasterio.mask import mask
 from shapely.geometry import mapping
 from unidecode import unidecode
@@ -34,9 +32,11 @@ from utils.data_preprocessing import *
 #https://www.earthenv.org/topography
 
 #-------data config------- 
-consider_OSM_railways = 0
-consider_OSM_roads = 0
-consider_airports = 0 
+landcover_dem_source = 'file'   #'file' or 'openeo'
+consider_railways = 0
+consider_roads = 0
+consider_airports = 0
+consider_waterbodies = 0 
 EPSG_manual = ''  #if None use empty string
 #----------------------------
 ############### Define study region ############### use geopackage from gadm.org to inspect in QGIS
@@ -60,7 +60,7 @@ dirname = os.path.dirname(__file__)
 data_path = os.path.join(dirname, 'Raw_Spatial_Data')
 landcoverRasterPath = os.path.join(data_path, "PROBAV_LC100_global_v3.0.1_2019-nrt_Discrete-Classification-map_EPSG-4326.tif")
 demRasterPath = os.path.join(data_path, 'DEM','gebco_cutout.tif')
-if consider_OSM_railways == 1 or consider_OSM_roads == 1 or consider_airports == 1:
+if consider_railways == 1 or consider_roads == 1 or consider_airports == 1 or consider_waterbodies == 1:
     OSM_country_path = os.path.join(data_path, 'OSM', OSM_folder_name) 
 
 
@@ -117,14 +117,14 @@ region.to_file(os.path.join(glaes_output_dir, f'{region_name_clean}_{EPSG}.geojs
 # region_copy['buffered']=region_copy.buffer(1000)
 # # Convert buffered region back to EPSC 4326 to get bounding box latitude and longitude 
 # region_buffered_4326 = region_copy.set_geometry('buffered').to_crs(epsg=4326)
-# bounding_box = region_buffered_4326['buffered'].total_bounds
+# bounding_box = region_buffered_4326['buffered'].total_bounds 
 # print(f"Bounding box: \nminx: {bounding_box[0]}, miny: {bounding_box[1]}, maxx: {bounding_box[2]}, maxy: {bounding_box[3]}")
 
 # Convert region back to EPSC 4326 to trim raster files
 region.to_crs(epsg=4326, inplace=True)
 
 
-if consider_OSM_railways == 1:
+if consider_railways == 1:
     print('processing railways')
     OSM_file = gpd.read_file(os.path.join(OSM_country_path, f'gis_osm_railways_free_1.shp'))
     OSM_railways = OSM_clip_reproject(OSM_file, region, EPSG)
@@ -134,7 +134,7 @@ if consider_OSM_railways == 1:
     else:
         print("No railways found in the region. File not saved.")
 
-if consider_OSM_roads == 1:
+if consider_roads == 1:
     print('processing roads')
     OSM_file = gpd.read_file(os.path.join(OSM_country_path, f'gis_osm_roads_free_1.shp'))
     OSM_roads = OSM_clip_reproject(OSM_file, region, EPSG)
@@ -157,22 +157,68 @@ if consider_airports == 1:
     else:
         print("No airports found in the region. File not saved.")
 
+if consider_waterbodies == 1:
+    print('processing waterbodies')
+    OSM_file = gpd.read_file(os.path.join(OSM_country_path, f'gis_osm_water_a_free_1.shp'))
+    OSM_waterbodies = OSM_clip_reproject(OSM_file, region, EPSG) #all transport fclasses from the OSM file 
+    OSM_waterbodies_filtered = OSM_waterbodies[OSM_waterbodies['code'].isin([8200, 8201, 8202])] #8200: unspecified waterbodies like lakes, 8201: reservoir, 8202: river
+    # Check if OSM_waterbodies_filtered is not empty before saving
+    if not OSM_waterbodies_filtered.empty:
+        OSM_waterbodies_filtered.to_file(os.path.join(glaes_output_dir, f'OSM_waterbodies_{region_name_clean}_{EPSG}.geojson'), driver='GeoJSON', encoding='utf-8')
+    else:
+        print("No waterbodies found in the region. File not saved.")
+
     
 
 
 print('landcover')
-clip_reproject_raster(landcoverRasterPath, region_name_clean, region, 'landcover', EPSG, 'nearest', glaes_output_dir)
+if landcover_dem_source == 'openeo':
+    connection = openeo.connect(url="openeo.dataspace.copernicus.eu").authenticate_oidc()
+
+    output_path = os.path.join(glaes_output_dir, f'landcover_{region_name_clean}_EPSG{EPSG}.tif')
+
+    with open(os.path.join(glaes_output_dir, f'{region_name_clean}_4326.geojson'), 'r') as file: #use region file in EPSG 4326 because openeo default file is in 4326
+        aoi = json.load(file)
+
+    datacube_landcover = connection.load_collection("ESA_WORLDCOVER_10M_2021_V2")
+    #clip landcover directly to area of interest 
+    masked_datacube = datacube_landcover.mask_polygon(aoi)
+    #reproject landcover to EPSG 32633 and dont change resolution thereby
+    landcover = masked_datacube.resample_spatial(projection=EPSG, resolution=0) #resolution=0 does not change resolution
+    #download
+    landcover.download(output_path)
+
+if landcover_dem_source == 'file':
+    clip_reproject_raster(landcoverRasterPath, region_name_clean, region, 'landcover', EPSG, 'nearest', glaes_output_dir)
 
 
 print('DEM')
 try:
-    clip_reproject_raster(demRasterPath, region_name_clean, region, 'DEM', EPSG, 'bilinear', glaes_output_dir)
+    if landcover_dem_source == 'openeo':
+        connection = openeo.connect(url="openeo.dataspace.copernicus.eu").authenticate_oidc()
 
-    #reproject and match resolution of DEM to landcover data
-    infile=os.path.join(glaes_output_dir, f'DEM_{region_name_clean}_EPSG{EPSG}.tif')
-    match=os.path.join(glaes_output_dir, f'landcover_{region_name_clean}_EPSG{EPSG}.tif')
-    outfile=os.path.join(glaes_output_dir, f'DEM_{region_name_clean}_EPSG{EPSG}_resampled.tif')
-    reproj_match(infile, match, 'bilinear', outfile)
+        output_path = os.path.join(glaes_output_dir, f'DEM_{region_name_clean}_EPSG{EPSG}_resampled.tif')
+
+        with open(os.path.join(glaes_output_dir, f'{region_name_clean}_4326.geojson'), 'r') as file: #use region file in EPSG 4326 because openeo default file is in 4326
+            aoi = json.load(file)
+
+        datacube_dem = connection.load_collection("COPERNICUS_30")
+        #clip dem directly to area of interest 
+        masked_datacube = datacube_dem.mask_polygon(aoi)
+        #co-register dem with landcover (same projection, same resolution, same origin)
+        dem_registered = masked_datacube.resample_cube_spatial(landcover, method = 'bilinear')
+        #download
+        dem_registered.download(output_path)
+    
+    if landcover_dem_source == 'file':
+        clip_reproject_raster(demRasterPath, region_name_clean, region, 'DEM', EPSG, 'bilinear', glaes_output_dir)
+
+        #reproject and match resolution of DEM to landcover data
+        infile=os.path.join(glaes_output_dir, f'DEM_{region_name_clean}_EPSG{EPSG}.tif')
+        match=os.path.join(glaes_output_dir, f'landcover_{region_name_clean}_EPSG{EPSG}.tif')
+        outfile=os.path.join(glaes_output_dir, f'DEM_{region_name_clean}_EPSG{EPSG}_resampled.tif')
+        reproj_match(infile, match, 'bilinear', outfile)
+
 
     #create slope map (https://www.earthdatascience.org/tutorials/get-slope-aspect-from-digital-elevation-model/)
     dem_file = richdem.LoadGDAL(os.path.join(glaes_output_dir, f'DEM_{region_name_clean}_EPSG{EPSG}_resampled.tif'))
