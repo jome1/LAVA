@@ -18,6 +18,7 @@ import os
 import geopandas as gpd
 import json
 import pickle
+import yaml
 import rasterio
 import numpy as np
 import pygadm
@@ -30,6 +31,7 @@ import richdem
 from utils.data_preprocessing import *
 
 #https://www.earthenv.org/topography
+
 
 #-------data config------- 
 landcover_dem_source = 'file'   #'file' or 'openeo'
@@ -192,32 +194,35 @@ if landcover_dem_source == 'file':
     clip_reproject_raster(landcoverRasterPath, region_name_clean, region, 'landcover', EPSG, 'nearest', glaes_output_dir)
 
 
-print('DEM')
+print('DEM') #block comment: SHIFT+ALT+A, multiple line comment: STRG+#
 try:
-    if landcover_dem_source == 'openeo':
-        connection = openeo.connect(url="openeo.dataspace.copernicus.eu").authenticate_oidc()
+    # test to use DEM data via openeo, only works when land cover is also fetched from openEO because DEM is co-registered on the back-end to the landcover 
+    # (current implementation: use GEBCO DTM file)
+    # if landcover_dem_source == 'openeo':
+    #     connection = openeo.connect(url="openeo.dataspace.copernicus.eu").authenticate_oidc()
 
-        output_path = os.path.join(glaes_output_dir, f'DEM_{region_name_clean}_EPSG{EPSG}_resampled.tif')
+    #     output_path = os.path.join(glaes_output_dir, f'DEM_{region_name_clean}_EPSG{EPSG}_resampled.tif')
 
-        with open(os.path.join(glaes_output_dir, f'{region_name_clean}_4326.geojson'), 'r') as file: #use region file in EPSG 4326 because openeo default file is in 4326
-            aoi = json.load(file)
+    #     with open(os.path.join(glaes_output_dir, f'{region_name_clean}_4326.geojson'), 'r') as file: #use region file in EPSG 4326 because openeo default file is in 4326
+    #         aoi = json.load(file)
 
-        datacube_dem = connection.load_collection("COPERNICUS_30")
-        #clip dem directly to area of interest 
-        masked_datacube = datacube_dem.mask_polygon(aoi)
-        #co-register dem with landcover (same projection, same resolution, same origin)
-        dem_registered = masked_datacube.resample_cube_spatial(landcover, method = 'bilinear')
-        #download
-        dem_registered.download(output_path)
+    #     datacube_dem = connection.load_collection("COPERNICUS_30")
+    #     #clip dem directly to area of interest 
+    #     masked_datacube = datacube_dem.mask_polygon(aoi)
+    #     #co-register dem with landcover (same projection, same resolution, same origin)
+    #     dem_registered = masked_datacube.resample_cube_spatial(landcover, method = 'bilinear')
+    #     #download
+    #     dem_registered.download(output_path)
     
-    if landcover_dem_source == 'file':
-        clip_reproject_raster(demRasterPath, region_name_clean, region, 'DEM', EPSG, 'bilinear', glaes_output_dir)
+    # if landcover_dem_source == 'file':
 
-        #reproject and match resolution of DEM to landcover data
-        infile=os.path.join(glaes_output_dir, f'DEM_{region_name_clean}_EPSG{EPSG}.tif')
-        match=os.path.join(glaes_output_dir, f'landcover_{region_name_clean}_EPSG{EPSG}.tif')
-        outfile=os.path.join(glaes_output_dir, f'DEM_{region_name_clean}_EPSG{EPSG}_resampled.tif')
-        reproj_match(infile, match, 'bilinear', outfile)
+    clip_reproject_raster(demRasterPath, region_name_clean, region, 'DEM', EPSG, 'bilinear', glaes_output_dir)
+
+    #reproject and match resolution of DEM to landcover data
+    infile=os.path.join(glaes_output_dir, f'DEM_{region_name_clean}_EPSG{EPSG}.tif')
+    match=os.path.join(glaes_output_dir, f'landcover_{region_name_clean}_EPSG{EPSG}.tif')
+    outfile=os.path.join(glaes_output_dir, f'DEM_{region_name_clean}_EPSG{EPSG}_resampled.tif')
+    reproj_match(infile, match, 'bilinear', outfile)
 
 
     #create slope map (https://www.earthdatascience.org/tutorials/get-slope-aspect-from-digital-elevation-model/)
