@@ -66,6 +66,7 @@ dirname = os.path.dirname(__file__)
 data_path = os.path.join(dirname, 'Raw_Spatial_Data')
 landcoverRasterPath = os.path.join(data_path, "PROBAV_LC100_global_v3.0.1_2019-nrt_Discrete-Classification-map_EPSG-4326.tif")
 demRasterPath = os.path.join(data_path, 'DEM','gebco_cutout.tif')
+coastlinesFilePath = os.path.join(data_path, 'GOAS', 'goas.gpkg')
 if consider_railways == 1 or consider_roads == 1 or consider_airports == 1 or consider_waterbodies == 1:
     OSM_country_path = os.path.join(data_path, 'OSM', OSM_folder_name) 
 
@@ -118,13 +119,29 @@ region.to_crs(epsg=EPSG, inplace=True)
 print(f'region projected to defined CRS: {region.crs}')
 region.to_file(os.path.join(glaes_output_dir, f'{region_name_clean}_{EPSG}.geojson'), driver='GeoJSON', encoding='utf-8')
 
-# #calculate bounding box with 1000m buffer (region needs to be in projected CRS so meters are the unit)
-# region_copy = region
-# region_copy['buffered']=region_copy.buffer(1000)
-# # Convert buffered region back to EPSC 4326 to get bounding box latitude and longitude 
-# region_buffered_4326 = region_copy.set_geometry('buffered').to_crs(epsg=4326)
-# bounding_box = region_buffered_4326['buffered'].total_bounds 
-# print(f"Bounding box: \nminx: {bounding_box[0]}, miny: {bounding_box[1]}, maxx: {bounding_box[2]}, maxy: {bounding_box[3]}")
+
+#calculate bounding box with 1000m buffer (region needs to be in projected CRS so meters are the unit)
+region_copy = region
+region_copy['buffered']=region_copy.buffer(1000)
+# Convert buffered region back to EPSC 4326 to get bounding box latitude and longitude 
+region_buffered_4326 = region_copy.set_geometry('buffered').to_crs(epsg=4326)
+bounding_box = region_buffered_4326['buffered'].total_bounds 
+print(f"Bounding box in EPSG 4326: \nminx: {bounding_box[0]}, miny: {bounding_box[1]}, maxx: {bounding_box[2]}, maxy: {bounding_box[3]}")
+
+
+#clip global oceans and seas file to study region for coastlines
+try:
+    coastlines = gpd.read_file(coastlinesFilePath)
+    coastlines_region = coastlines.clip(bounding_box)
+    if not coastlines_region.empty:
+        coastlines_region.to_file(os.path.join(glaes_output_dir, f'goas_{region_name_clean}_4326.geojson'), driver='GeoJSON', encoding='utf-8')
+        coastlines_region.to_crs(epsg=EPSG, inplace=True)
+        coastlines_region.to_file(os.path.join(glaes_output_dir, f'goas_{region_name_clean}_{EPSG}.geojson'), driver='GeoJSON', encoding='utf-8')
+    else:
+        print('no coastline in study region')
+except:
+    print('error with global oceans and seas (coastlines)')
+
 
 # Convert region back to EPSC 4326 to trim raster files
 region.to_crs(epsg=4326, inplace=True)

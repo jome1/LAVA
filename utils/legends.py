@@ -1,5 +1,37 @@
 
 
+#https://worldcover2021.esa.int/data/docs/WorldCover_PUM_V2.0.pdf p15
+colors_dict_esa_worldcover2021 = {
+    10: (0.0, 0.39215686, 0.0),  # Tree cover
+    20: (1.0, 0.73333333, 0.13333333),  # Shrubland
+    30: (1.0, 1.0, 0.29803922),  # Grassland
+    40: (0.94117647, 0.58823529, 1.0),  # Cropland
+    50: (0.98039216, 0.0, 0.0),  # Built-up
+    60: (0.70588235, 0.70588235, 0.70588235),  # Bare / sparse vegetation
+    70: (0.94117647, 0.94117647, 0.94117647),  # Snow and Ice
+    80: (0.0, 0.39215686, 0.78431373),  # Permanent water bodies
+    90: (0.0, 0.58823529, 0.62745098),  # Herbaceous wetland
+    95: (0.0, 0.81176471, 0.45882353),  # Mangroves
+    100: (0.98039216, 0.90196078, 0.62745098)  # Moss and lichen
+}
+
+legend_dict_esa_worldcover2021 = {
+    10: 'Tree cover',
+    20: 'Shrubland',
+    30: 'Grassland',
+    40: 'Cropland',
+    50: 'Built-up',
+    60: 'Bare / sparse vegetation',
+    70: 'Snow and Ice',
+    80: 'Permanent water bodies',
+    90: 'Herbaceous wetland',
+    95: 'Mangroves',
+    100: 'Moss and lichen'
+}
+
+
+
+
 #Copernicus Global Land Service: Land Cover 100m: collection 3: epoch 2019: Globe 
 #downloaded from zenodo: https://zenodo.org/records/3939050
 
