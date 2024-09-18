@@ -19,7 +19,7 @@ this is the readme for landuse codes
 | 100  | Moss and lichen             |
 
 \
-\
+
 
 Copernicus Global Land Service: Land Cover 100m: collection 3: epoch 2019: Globe
 
