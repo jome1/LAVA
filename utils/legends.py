@@ -1,6 +1,20 @@
 
 
 #https://worldcover2021.esa.int/data/docs/WorldCover_PUM_V2.0.pdf p15
+colors_dict_esa_worldcover2021_int = {
+    10: (0, 100, 0),          # Tree cover
+    20: (255, 187, 34),       # Shrubland
+    30: (255, 255, 76),       # Grassland
+    40: (240, 150, 255),      # Cropland
+    50: (250, 0, 0),          # Built-up
+    60: (180, 180, 180),      # Bare / sparse vegetation
+    70: (240, 240, 240),      # Snow and Ice
+    80: (0, 100, 200),        # Permanent water bodies
+    90: (0, 150, 160),        # Herbaceous wetland
+    95: (0, 207, 117),        # Mangroves
+    100: (250, 230, 160)      # Moss and lichen
+}
+
 colors_dict_esa_worldcover2021 = {
     10: (0.0, 0.39215686, 0.0),  # Tree cover
     20: (1.0, 0.73333333, 0.13333333),  # Shrubland
@@ -14,6 +28,7 @@ colors_dict_esa_worldcover2021 = {
     95: (0.0, 0.81176471, 0.45882353),  # Mangroves
     100: (0.98039216, 0.90196078, 0.62745098)  # Moss and lichen
 }
+
 
 legend_dict_esa_worldcover2021 = {
     10: 'Tree cover',
@@ -37,6 +52,32 @@ legend_dict_esa_worldcover2021 = {
 
 #original url?: https://land.copernicus.eu/en/products/global-dynamic-land-cover/copernicus-global-land-service-land-cover-100m-collection-3-epoch-2018-globe
 #product user manual with legends: https://land.copernicus.eu/en/technical-library/global-dynamic-land-cover-product-user-manual-v3.0/@@download/file
+
+colors_dict_copernicus_global_coll3_int = {
+    255: (40, 40, 40),        # No input data available
+    111: (88, 72, 31),        # Closed forest, evergreen needle leaf
+    113: (112, 102, 62),      # Closed forest, deciduous needle leaf
+    112: (0, 153, 0),         # Closed forest, evergreen, broad leaf
+    114: (0, 204, 0),         # Closed forest, deciduous broad leaf
+    115: (78, 117, 31),       # Closed forest, mixed
+    116: (0, 120, 0),         # Closed forest, unknown
+    121: (102, 96, 0),        # Open forest, evergreen needle leaf
+    123: (141, 116, 0),       # Open forest, deciduous needle leaf
+    122: (141, 180, 0),       # Open forest, evergreen broad leaf
+    124: (160, 220, 0),       # Open forest, deciduous broad leaf
+    125: (146, 153, 0),       # Open forest, mixed
+    126: (100, 140, 0),       # Open forest, unknown
+    20: (255, 187, 34),       # Shrubs
+    30: (255, 255, 76),       # Herbaceous vegetation
+    90: (0, 150, 160),        # Herbaceous wetland
+    100: (250, 230, 160),     # Moss and lichen
+    60: (180, 180, 180),      # Bare / sparse vegetation
+    40: (240, 150, 255),      # Cultivated and managed vegetation/agriculture (cropland)
+    50: (255, 0, 0),          # Urban / built up
+    70: (240, 240, 240),      # Snow and Ice
+    80: (0, 50, 200),         # Permanent water bodies
+    200: (0, 0, 128)          # Open sea
+}
 
 colors_dict_copernicus_global_coll3 = {
     255: (0.15686275, 0.15686275, 0.15686275),  # No input data available
@@ -94,6 +135,54 @@ legend_dict_copernicus_global_coll3 = {
 
 # CLC Europe 2012
 
+colors_dict_Corine_Europe_2012_int = {
+    1: (230, 0, 77),
+    2: (255, 0, 0),
+    3: (204, 77, 242),
+    4: (204, 0, 0),
+    5: (230, 204, 204),
+    6: (230, 204, 230),
+    7: (166, 0, 204),
+    8: (166, 77, 0),
+    9: (255, 77, 255),
+    10: (255, 166, 255),
+    11: (255, 230, 255),
+    12: (255, 255, 168),
+    13: (255, 255, 0),
+    14: (230, 230, 0),
+    15: (230, 128, 0),
+    16: (242, 166, 77),
+    17: (230, 166, 0),
+    18: (230, 230, 77),
+    19: (255, 230, 166),
+    20: (255, 230, 77),
+    21: (230, 204, 77),
+    22: (242, 204, 166),
+    23: (128, 255, 0),
+    24: (0, 166, 0),
+    25: (77, 255, 0),
+    26: (204, 242, 77),
+    27: (166, 255, 128),
+    28: (166, 230, 77),
+    29: (166, 242, 0),
+    30: (230, 230, 230),
+    31: (204, 204, 204),
+    32: (204, 255, 204),
+    33: (0, 0, 0),
+    34: (166, 230, 204),
+    35: (166, 166, 255),
+    36: (77, 77, 255),
+    37: (204, 204, 255),
+    38: (230, 230, 255),
+    39: (166, 166, 230),
+    40: (0, 204, 242),
+    41: (128, 242, 230),
+    42: (0, 255, 166),
+    43: (166, 255, 230),
+    44: (230, 242, 255),
+    -128: (255, 255, 255)
+}
+
 colors_dict_Corine_Europe_2012 = {
     1: (0.9019607843137255, 0.0, 0.30196078431372547),
     2: (1.0, 0.0, 0.0),
@@ -141,6 +230,7 @@ colors_dict_Corine_Europe_2012 = {
     44: (0.9019607843137255, 0.9490196078431372, 1.0),
     -128: (1.0, 1.0, 1.0)
 }
+
 
 legend_dict_Corine_Europe_2012 ={
     1: "Continuous urban fabric",
