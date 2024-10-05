@@ -3,17 +3,18 @@ landcover_source: 'file'   #'file' or 'openeo'
 consider_railways: 0
 consider_roads: 0
 consider_airports: 0
-consider_waterbodies: 0 
+consider_waterbodies: 0
+consider_additional_exclusion_polygons: 1 
 EPSG_manual: ''  #if None use empty string
 
 
 #Define study region (use geopackage from gadm.org to inspect in QGIS)
-region_name: Elbe-Elster #always needed, same name as in gadm.org (if country is studied, then use country name)
+region_name: Faxe #always needed, same name as in gadm.org (if country is studied, then use country name)
 OSM_folder_name: BerlinBrandenburg #usually same as country_code, only needed if OSM is to be considered
 
 
 #use GADM boundary
-country_code: DEU #    #PRT  #Städteregion Aachen in level 2 #Porto in level 1 #Elbe-Elster in level 2 #Zell am See in level 2
+country_code: DNK #    #PRT  #Städteregion Aachen in level 2 #Porto in level 1 #Elbe-Elster in level 2 #Zell am See in level 2
 gadm_level: 2
 #or use custom region
 custom_polygon_filename: '' #if None use empty string           'Aceh_single.geojson'

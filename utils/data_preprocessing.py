@@ -9,7 +9,7 @@ from rasterio.warp import calculate_default_transform, reproject, Resampling
 
 
 
-def OSM_clip_reproject(OSM_file, gdf, target_crs):
+def geopandas_clip_reproject(geopandas_file, gdf, target_crs):
     """
     Clips OSM file to the extent of a GeoPandas DataFrame and reprojects it to a given CRS.
 
@@ -19,11 +19,11 @@ def OSM_clip_reproject(OSM_file, gdf, target_crs):
     """
     
     #clip files 
-    OSM_transport_infra_clipped = gpd.clip(OSM_file, gdf)
+    geopandas_clipped = gpd.clip(geopandas_file, gdf)
     #reproject and save files
-    OSM_transport_infra_clipped.to_crs(epsg=target_crs, inplace=True)
+    geopandas_clipped.to_crs(epsg=target_crs, inplace=True)
     
-    return OSM_transport_infra_clipped
+    return geopandas_clipped
 
 
 
