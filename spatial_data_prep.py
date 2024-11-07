@@ -31,6 +31,9 @@ import richdem
 from utils.data_preprocessing import *
 import logging
 
+# Record the starting time
+start_time = time.time()
+
 logging.basicConfig(handlers=[
         logging.FileHandler("data-prep.log", mode='w'),
         logging.StreamHandler()
@@ -150,9 +153,9 @@ if consider_coastlines == 1:
         coastlines = gpd.read_file(coastlinesFilePath)
         coastlines_region = coastlines.clip(bounding_box)
         if not coastlines_region.empty:
-            coastlines_region.to_file(os.path.join(output_dir, f'goas_{region_name_clean}_4326.geojson'), driver='GeoJSON', encoding='utf-8')
+            coastlines_region.to_file(os.path.join(output_dir, f'goas_{region_name_clean}_4326.gpkg'), driver='GPKG', encoding='utf-8')
             coastlines_region.to_crs(epsg=EPSG, inplace=True)
-            coastlines_region.to_file(os.path.join(output_dir, f'goas_{region_name_clean}_{EPSG}.geojson'), driver='GeoJSON', encoding='utf-8')
+            coastlines_region.to_file(os.path.join(output_dir, f'goas_{region_name_clean}_{EPSG}.gpkg'), driver='GPKG', encoding='utf-8')
         else:
             logging.info('no coastline in study region')
     except:
@@ -169,7 +172,7 @@ if consider_railways == 1:
     OSM_railways = geopandas_clip_reproject(OSM_file, region, EPSG)
     # Check if OSM_airports is not empty before saving
     if not OSM_railways.empty:
-        OSM_railways.to_file(os.path.join(output_dir, f'OSM_railways_{region_name_clean}_{EPSG}.geojson'), driver='GeoJSON', encoding='utf-8')
+        OSM_railways.to_file(os.path.join(output_dir, f'OSM_railways_{region_name_clean}_{EPSG}.gpkg'), driver='GPKG', encoding='utf-8')
     else:
         logging.info("No railways found in the region. File not saved.")
 
@@ -183,7 +186,7 @@ if consider_roads == 1:
     #reset index for clean, zero-based index of filtered data
     OSM_roads_filtered.reset_index(drop=True, inplace=True)
     #save file
-    OSM_roads_filtered.to_file(os.path.join(output_dir, f'OSM_roads_{region_name_clean}_{EPSG}.geojson'), driver='GeoJSON', encoding='utf-8')
+    OSM_roads_filtered.to_file(os.path.join(output_dir, f'OSM_roads_{region_name_clean}_{EPSG}.gpkg'), driver='GPKG', encoding='utf-8')
 
 if consider_airports == 1:
     print('processing airports')
@@ -192,7 +195,7 @@ if consider_airports == 1:
     OSM_airports = OSM_transport[OSM_transport['code'].isin([5651, 5652])] #5651: large airport, 5652: small airport or airfield
     # Check if OSM_airports is not empty before saving
     if not OSM_airports.empty:
-        OSM_airports.to_file(os.path.join(output_dir, f'OSM_airports_{region_name_clean}_{EPSG}.geojson'), driver='GeoJSON', encoding='utf-8')
+        OSM_airports.to_file(os.path.join(output_dir, f'OSM_airports_{region_name_clean}_{EPSG}.gpkg'), driver='GPKG', encoding='utf-8')
     else:
         logging.info("No airports found in the region. File not saved.")
 
@@ -203,7 +206,7 @@ if consider_waterbodies == 1:
     OSM_waterbodies_filtered = OSM_waterbodies[OSM_waterbodies['code'].isin([8200, 8201, 8202])] #8200: unspecified waterbodies like lakes, 8201: reservoir, 8202: river
     # Check if OSM_waterbodies_filtered is not empty before saving
     if not OSM_waterbodies_filtered.empty:
-        OSM_waterbodies_filtered.to_file(os.path.join(output_dir, f'OSM_waterbodies_{region_name_clean}_{EPSG}.geojson'), driver='GeoJSON', encoding='utf-8')
+        OSM_waterbodies_filtered.to_file(os.path.join(output_dir, f'OSM_waterbodies_{region_name_clean}_{EPSG}.gpkg'), driver='GPKG', encoding='utf-8')
     else:
         logging.info("No waterbodies found in the region. File not saved.")
 
@@ -237,9 +240,9 @@ if landcover_source == 'openeo':
 
     datacube_landcover = connection.load_collection("ESA_WORLDCOVER_10M_2021_V2")
     #clip landcover directly to area of interest 
-    masked_datacube = datacube_landcover.mask_polygon(aoi)
+    masked_landcover = datacube_landcover.mask_polygon(aoi)
     #reproject landcover to EPSG 32633 and dont change resolution thereby
-    landcover = masked_datacube.resample_spatial(projection=EPSG, resolution=0) #resolution=0 does not change resolution
+    landcover = masked_landcover.resample_spatial(projection=EPSG, resolution=0) #resolution=0 does not change resolution
     
     result = landcover.save_result('GTiFF')
     # Creating a new batch job at the back-end by sending the datacube information.
@@ -254,61 +257,65 @@ if landcover_source == 'file':
 
 print('processing DEM') #block comment: SHIFT+ALT+A, multiple line comment: STRG+#
 try:
-    # test to use DEM data via openeo, only works when land cover is also fetched from openEO because DEM is co-registered on the back-end to the landcover 
-    # (current implementation: use GEBCO DTM file)
-    # if landcover_source == 'openeo':
-    #     connection = openeo.connect(url="openeo.dataspace.copernicus.eu").authenticate_oidc()
-
-    #     output_path = os.path.join(output_dir, f'DEM_{region_name_clean}_EPSG{EPSG}_resampled.tif')
-
-    #     with open(os.path.join(output_dir, f'{region_name_clean}_4326.geojson'), 'r') as file: #use region file in EPSG 4326 because openeo default file is in 4326
-    #         aoi = json.load(file)
-
-    #     datacube_dem = connection.load_collection("COPERNICUS_30")
-    #     #clip dem directly to area of interest 
-    #     masked_datacube = datacube_dem.mask_polygon(aoi)
-    #     #co-register dem with landcover (same projection, same resolution, same origin)
-    #     dem_registered = masked_datacube.resample_cube_spatial(landcover, method = 'bilinear')
-    #     #download
-    #     dem_registered.download(output_path)
-     
-    # if landcover_source == 'file':
-
-    clip_reproject_raster(demRasterPath, region_name_clean, region, 'DEM', EPSG, 'bilinear', output_dir)
+    clip_reproject_raster(demRasterPath, region_name_clean, region, 'DEM', EPSG, 'nearest', output_dir)
+    dem_4326_Path = os.path.join(output_dir, f'DEM_{region_name_clean}_EPSG4326.tif')
 
     #reproject and match resolution of DEM to landcover data (co-registration)
-    dem_orig=os.path.join(output_dir, f'DEM_{region_name_clean}_EPSG{EPSG}.tif')
-    match=os.path.join(output_dir, f'landcover_{region_name_clean}_EPSG{EPSG}.tif')
-    dem_resampled=os.path.join(output_dir, f'DEM_{region_name_clean}_EPSG{EPSG}_resampled.tif')
-    reproj_match(dem_orig, match, 'bilinear', dem_resampled)
+    dem_localCRS_Path=os.path.join(output_dir, f'DEM_{region_name_clean}_EPSG{EPSG}.tif')
+    matchPath=os.path.join(output_dir, f'landcover_{region_name_clean}_EPSG{EPSG}.tif')
+    dem_resampled_Path=os.path.join(output_dir, f'DEM_{region_name_clean}_EPSG{EPSG}_resampled.tif') 
+    co_register(dem_localCRS_Path, matchPath, 'nearest', dem_resampled_Path)
 
+    #slope and aspect map
+    # Define output directories
+    richdem_helper_dir = os.path.join(dirname, 'data', f'{region_name_clean}', 'richdem_helper')
+    os.makedirs(richdem_helper_dir, exist_ok=True)
 
     #create slope map (https://www.earthdatascience.org/tutorials/get-slope-aspect-from-digital-elevation-model/)
-    dem_file = richdem.LoadGDAL(os.path.join(output_dir, f'DEM_{region_name_clean}_EPSG{EPSG}_resampled.tif'))
+    #save in local CRS
+    dem_file = richdem.LoadGDAL(dem_localCRS_Path)
     slope = richdem.TerrainAttribute(dem_file, attrib='slope_degrees')
-    save_richdem_file(slope, dem_resampled, os.path.join(output_dir, f'slope_{region_name_clean}_EPSG{EPSG}_resampled.tif'))
-    #richdem.SaveGDAL(os.path.join(output_dir, f'slope_{region_name_clean}_EPSG{EPSG}_resampled.tif'), slope)
+    slopeFilePathLocalCRS = os.path.join(richdem_helper_dir, f'slope_{region_name_clean}_EPSG{EPSG}.tif')
+    save_richdem_file(slope, dem_localCRS_Path, slopeFilePathLocalCRS)
+    slope_co_registered_FilePath = os.path.join(richdem_helper_dir, f'slope_{region_name_clean}_EPSG{EPSG}_resampled.tif')
+    co_register(slopeFilePathLocalCRS, matchPath, 'nearest', slope_co_registered_FilePath)
+    #save in 4326: slope cannot be calculated from EPSG4326 because units get confused (https://github.com/r-barnes/richdem/issues/34)
+    slopeFilePath4326 = os.path.join(richdem_helper_dir, f'slope_{region_name_clean}_EPSG4326.tif')
+    reproject_raster(slopeFilePathLocalCRS, region_name_clean, 4326, 'nearest', slopeFilePath4326)
 
     #create aspect map (https://www.earthdatascience.org/tutorials/get-slope-aspect-from-digital-elevation-model/)
-    dem_file = richdem.LoadGDAL(os.path.join(output_dir, f'DEM_{region_name_clean}_EPSG{EPSG}_resampled.tif'))
+    #save in local CRS
+    dem_file = richdem.LoadGDAL(dem_localCRS_Path)
     aspect = richdem.TerrainAttribute(dem_file, attrib='aspect')
-    save_richdem_file(aspect, dem_resampled, os.path.join(output_dir, f'aspect_{region_name_clean}_EPSG{EPSG}_resampled.tif'))
-    #richdem.SaveGDAL(os.path.join(output_dir, f'aspect_{region_name_clean}_EPSG{EPSG}_resampled.tif'), aspect)
+    aspectFilePathLocalCRS = os.path.join(richdem_helper_dir, f'aspect_{region_name_clean}_EPSG{EPSG}.tif')
+    save_richdem_file(aspect, dem_localCRS_Path, aspectFilePathLocalCRS)
+    aspect_co_registered_FilePath = os.path.join(richdem_helper_dir, f'aspect_{region_name_clean}_EPSG{EPSG}_resampled.tif')
+    co_register(aspectFilePathLocalCRS, matchPath, 'nearest', aspect_co_registered_FilePath)
+    #save in 4326: not sure if aspect is calculated correctly in EPSG4326 because units might get confused (https://github.com/r-barnes/richdem/issues/34)
+    aspectFilePath4326 = os.path.join(richdem_helper_dir, f'aspect_{region_name_clean}_EPSG4326.tif')
+    reproject_raster(aspectFilePathLocalCRS, region_name_clean, 4326, 'nearest', aspectFilePath4326)
+
 
     #create map showing pixels with slope bigger X and aspect between Y and Z (north facing with slope where you would not build PV)
-    condition = (slope > X) & ((aspect >= Y) | (aspect <= Z))
-    result = np.where(condition, 1, 0) # Create a new raster with the filtered results
-    with rasterio.open(os.path.join(output_dir, f'slope_{region_name_clean}_EPSG{EPSG}_resampled.tif')) as src:
-        slope = src.read(1)
-        profile = src.profile
-    profile.update(dtype=rasterio.int16, count=1, nodata=0, compress='lzw') # Update the profile for the output raster
+    #local CRS
+    create_north_facing_pixels(slopeFilePathLocalCRS, aspectFilePathLocalCRS, region_name_clean, richdem_helper_dir, X, Y, Z)
+    #EPSG4326
+    create_north_facing_pixels(slope_co_registered_FilePath, aspect_co_registered_FilePath, region_name_clean, richdem_helper_dir, X, Y, Z)
+
+    #using right now the local CRS, non co-registered slope and aspect
+    # condition = (slope > X) & ((aspect >= Y) | (aspect <= Z))
+    # result = np.where(condition, 1, 0) # Create a new raster with the filtered results
+    # with rasterio.open(os.path.join(richdem_helper_dir, f'slope_{region_name_clean}_EPSG{EPSG}.tif')) as src:
+    #     slope = src.read(1)
+    #     profile = src.profile
+    # profile.update(dtype=rasterio.int16, count=1, nodata=0, compress='DEFLATE') # Update the profile for the output raster
     
-    if result.sum() > 0:
-        # Write the result to a new raster file
-        with rasterio.open(os.path.join(output_dir, f'north_facing_{region_name_clean}_EPSG{EPSG}_resampled.tif'), 'w', **profile) as dst:
-            dst.write(result.astype(rasterio.int16), 1)
-    if result.sum() == 0:
-        logging.info('no north-facing pixel exceeding threshold slope')
+    # if result.sum() > 0:
+    #     # Write the result to a new raster file
+    #     with rasterio.open(os.path.join(richdem_helper_dir, f'north_facing_{region_name_clean}_EPSG{EPSG}.tif'), 'w', **profile) as dst:
+    #         dst.write(result.astype(rasterio.int16), 1)
+    # if result.sum() == 0:
+    #     logging.info('no north-facing pixel exceeding threshold slope')
 
 except Exception as e:
     print(e)
@@ -344,7 +351,7 @@ if consider_WDPA == 1:
 
 
 
-
-
 print("Done!")
 
+elapsed = time.time() - start_time
+print(elapsed)

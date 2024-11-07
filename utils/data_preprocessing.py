@@ -6,6 +6,7 @@ from rasterio.mask import mask
 from shapely.geometry import mapping
 from unidecode import unidecode
 from rasterio.warp import calculate_default_transform, reproject, Resampling
+import numpy as np
 
 import zipfile
 import requests
@@ -69,11 +70,11 @@ def save_richdem_file(richdem_file, base_dem_FilePath, outFilePath):
     profile.update(
         dtype=rasterio.int16,
         count=1,
-        compress='lzw',
+        compress='DEFLATE',
         nodata=richdem_file.no_data) 
     #save raster file
     with rasterio.open(outFilePath, 'w', **profile) as dst:
-        dst.write(richdem_file.astype(rasterio.int16), 1)  
+        dst.write(richdem_file, 1)  #richdem_file.astype(rasterio.int16)
 
 
 def geopandas_clip_reproject(geopandas_file, gdf, target_crs):
@@ -154,7 +155,7 @@ def clip_reproject_raster(input_raster_path, region_name_clean, gdf, landcover_e
 
 
         # Reproject and save the raster
-        with rasterio.open(output_path, 'w', **kwargs, compress='lzw') as dst:
+        with rasterio.open(output_path, 'w', **kwargs, compress='DEFLATE') as dst:
             for i in range(1, src.count + 1):
                 reproject(
                     source=rasterio.band(src, i),
@@ -169,8 +170,48 @@ def clip_reproject_raster(input_raster_path, region_name_clean, gdf, landcover_e
 
 
 
+def reproject_raster(input_raster_path, region_name_clean, target_crs, resampling_method, outputFilePath):
+       
+    resampling_options = {
+        'nearest': Resampling.nearest,
+        'bilinear': Resampling.bilinear,
+        'cubic': Resampling.cubic
+    }
 
-def reproj_match(infile, match, resampling_method, outfile): #source: https://pygis.io/docs/e_raster_resample.html
+    # reproject landcover raster to local UTM CRS
+    with rasterio.open(os.path.join(input_raster_path)) as src:
+        # Calculate the transformation and dimensions for the target CRS
+        transform, width, height = calculate_default_transform(
+            src.crs, target_crs, src.width, src.height, *src.bounds)
+        kwargs = src.meta.copy()
+        kwargs.update({
+            'crs': target_crs,
+            'transform': transform, 
+            'width': width,
+            'height': height,
+            'dtype': rasterio.int16
+        })
+
+        # Create the output file path
+        output_path = outputFilePath
+
+
+        # Reproject and save the raster
+        with rasterio.open(output_path, 'w', **kwargs, compress='DEFLATE') as dst:
+            for i in range(1, src.count + 1):
+                reproject(
+                    source=rasterio.band(src, i),
+                    destination=rasterio.band(dst, i),
+                    src_transform=src.transform,
+                    src_crs=src.crs,
+                    dst_transform=transform,
+                    dst_crs=target_crs,
+                    resampling=resampling_options[resampling_method])
+                
+            print(f'reprojected raster CRS: {dst.crs}')
+
+
+def co_register(infile, match, resampling_method, outfile): #source: https://pygis.io/docs/e_raster_resample.html
     """Reproject a file to match the shape and projection of existing raster. (co-registration)
     
     Parameters
@@ -220,7 +261,7 @@ def reproj_match(infile, match, resampling_method, outfile): #source: https://py
             dtype=rasterio.int16,
             count=1,
             nodata=-9999,
-            compress='lzw') 
+            compress='DEFLATE') 
         
 
         print("Coregistered to shape:", dst_height,dst_width,'\n Affine',dst_transform)
@@ -236,3 +277,41 @@ def reproj_match(infile, match, resampling_method, outfile): #source: https://py
                     dst_transform=dst_transform,
                     dst_crs=dst_crs,
                     resampling=resampling_options[resampling_method])
+                
+
+
+def create_north_facing_pixels(slopeFilePath, aspectFilePath, region_name_clean, richdem_helper_dir, X, Y, Z):
+    if 'resampled' in slopeFilePath:
+        resampled = '_resampled'
+    else:
+        resampled = ''
+     
+    # Open the slope and aspect rasters
+    with rasterio.open(slopeFilePath) as src_slope:
+        slope = src_slope.read(1)  # Read the slope data
+        profile = src_slope.profile  # Get the profile for writing the output file
+        crs_slope = src_slope.crs  # Access the CRS from metadata
+        EPSG_slope = crs_slope.to_epsg() #get EPSG code
+
+    with rasterio.open(aspectFilePath) as src_aspect:
+        aspect = src_aspect.read(1)  # Read the aspect data
+        crs_aspect = src_aspect.crs  # Access the CRS from metadata
+        EPSG_aspect = crs_aspect.to_epsg() #get EPSG code
+
+    if EPSG_slope==EPSG_aspect:
+
+        #create map showing pixels with slope bigger X and aspect between Y and Z (north facing with slope where you would not build PV)
+        condition = (slope > X) & ((aspect >= Y) | (aspect <= Z))
+        result = np.where(condition, 1, 0) # Create a new raster with the filtered results
+
+        profile.update(dtype=rasterio.int16, count=1, nodata=0, compress='DEFLATE') # Update the profile for the output raster
+
+        if result.sum() > 0:
+            # Write the result to a new raster file
+            with rasterio.open(os.path.join(richdem_helper_dir, f'north_facing_{region_name_clean}_EPSG{EPSG_slope}{resampled}.tif'), 'w', **profile) as dst:
+                dst.write(result.astype(rasterio.int16), 1)
+        if result.sum() == 0:
+            logging.info('no north-facing pixel exceeding threshold slope')
+    
+    else:
+        print('EPSG codes of used rasters is not the same')

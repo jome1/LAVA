@@ -2,6 +2,7 @@
 
 #https://worldcover2021.esa.int/data/docs/WorldCover_PUM_V2.0.pdf p15
 colors_dict_esa_worldcover2021_int = {
+    #0: (0,0,0,0),              # nodata  
     10: (0, 100, 0),          # Tree cover
     20: (255, 187, 34),       # Shrubland
     30: (255, 255, 76),       # Grassland
