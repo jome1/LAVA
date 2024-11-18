@@ -39,7 +39,7 @@ logging.basicConfig(handlers=[
         logging.StreamHandler()
         ], level=logging.INFO) #source: https://stackoverflow.com/questions/13733552/logger-configuration-to-log-to-file-and-print-to-stdout
 
-with open("config.yaml", "r") as f:
+with open("config.yaml", "r", encoding="utf-8") as f:
     config = yaml.load(f, Loader=yaml.FullLoader)
 
 #-------data config------- 
@@ -56,10 +56,14 @@ wdpa_url = config['wdpa_url']
 
 #----------------------------
 ############### Define study region ############### use geopackage from gadm.org to inspect in QGIS
+region_folder_name = config['region_folder_name']
 region_name = config['region_name'] #always needed (if country is studied, then use country name)
 OSM_folder_name = config['OSM_folder_name'] #usually same as country_code, only needed if OSM is to be considered
+DEM_filename = config['DEM_filename']
+landcover_filename = config['landcover_filename']
 
 #use GADM boundary
+region_name = config['region_name'] #if country is studied, then use country name
 country_code = config['country_code']  #3-digit ISO code  #PRT  #Städteregion Aachen in level 2 #Porto in level 1 #Elbe-Elster in level 2 #Zell am See in level 2
 gadm_level = config['gadm_level']
 #or use custom region
@@ -77,8 +81,8 @@ start_time = time.time()
 # Get paths to data files or folders
 dirname = os.path.dirname(__file__)
 data_path = os.path.join(dirname, 'Raw_Spatial_Data')
-landcoverRasterPath = os.path.join(data_path, "PROBAV_LC100_global_v3.0.1_2019-nrt_Discrete-Classification-map_EPSG-4326.tif")
-demRasterPath = os.path.join(data_path, 'DEM','gebco_cutout.tif')
+landcoverRasterPath = os.path.join(data_path, landcover_filename)
+demRasterPath = os.path.join(data_path, 'DEM', DEM_filename)
 coastlinesFilePath = os.path.join(data_path, 'GOAS', 'goas.gpkg')
 wdpa_folder = os.path.join(data_path, 'WDPA')
 if consider_railways == 1 or consider_roads == 1 or consider_airports == 1 or consider_waterbodies == 1:
@@ -89,11 +93,11 @@ if consider_railways == 1 or consider_roads == 1 or consider_airports == 1 or co
 region_name_clean = unidecode(region_name)
 region_name_clean = region_name_clean.replace(" ", "")
 region_name_clean = region_name_clean.replace(".", "")
-region_name_clean = region_name_clean.replace("'", "")
+region_name_clean = region_name_clean.replace("'", "") 
 
 
 # Define output directories
-output_dir = os.path.join(dirname, 'data', f'{region_name_clean}')
+output_dir = os.path.join(dirname, 'data', f'{region_folder_name}')
 os.makedirs(output_dir, exist_ok=True)
 
 
@@ -163,7 +167,7 @@ if consider_coastlines == 1:
 
 
 # Convert region back to EPSC 4326 to trim raster files and clip polygons
-region.to_crs(epsg=4326, inplace=True)
+region.to_crs(epsg=4326, inplace=True) 
 
 
 if consider_railways == 1:
@@ -246,18 +250,18 @@ if landcover_source == 'openeo':
     
     result = landcover.save_result('GTiFF')
     # Creating a new batch job at the back-end by sending the datacube information.
-    job = result.create_job(job_options={"do_extent_check": False})
+    job = result.create_job(job_options={"do_extent_check": False}, title=f'landcover_{region_name_clean}_{EPSG}')
     # Starts the job and waits until it finished to download the result.
     job.start_and_wait()
     job.get_results().download_file(output_path) 
 
 if landcover_source == 'file':
-    clip_reproject_raster(landcoverRasterPath, region_name_clean, region, 'landcover', EPSG, 'nearest', output_dir)
+    clip_reproject_raster(landcoverRasterPath, region_name_clean, region, 'landcover', EPSG, 'nearest', 'int16', output_dir)
 
 
 print('processing DEM') #block comment: SHIFT+ALT+A, multiple line comment: STRG+#
 try:
-    clip_reproject_raster(demRasterPath, region_name_clean, region, 'DEM', EPSG, 'nearest', output_dir)
+    clip_reproject_raster(demRasterPath, region_name_clean, region, 'DEM', EPSG, 'nearest', 'int16', output_dir)
     dem_4326_Path = os.path.join(output_dir, f'DEM_{region_name_clean}_EPSG4326.tif')
 
     #reproject and match resolution of DEM to landcover data (co-registration)
@@ -268,7 +272,7 @@ try:
 
     #slope and aspect map
     # Define output directories
-    richdem_helper_dir = os.path.join(dirname, 'data', f'{region_name_clean}', 'richdem_helper')
+    richdem_helper_dir = os.path.join(output_dir, 'derived_from_DEM')
     os.makedirs(richdem_helper_dir, exist_ok=True)
 
     #create slope map (https://www.earthdatascience.org/tutorials/get-slope-aspect-from-digital-elevation-model/)
@@ -297,25 +301,10 @@ try:
 
 
     #create map showing pixels with slope bigger X and aspect between Y and Z (north facing with slope where you would not build PV)
-    #local CRS
-    create_north_facing_pixels(slopeFilePathLocalCRS, aspectFilePathLocalCRS, region_name_clean, richdem_helper_dir, X, Y, Z)
-    #EPSG4326
+    #local CRS co-registered
     create_north_facing_pixels(slope_co_registered_FilePath, aspect_co_registered_FilePath, region_name_clean, richdem_helper_dir, X, Y, Z)
-
-    #using right now the local CRS, non co-registered slope and aspect
-    # condition = (slope > X) & ((aspect >= Y) | (aspect <= Z))
-    # result = np.where(condition, 1, 0) # Create a new raster with the filtered results
-    # with rasterio.open(os.path.join(richdem_helper_dir, f'slope_{region_name_clean}_EPSG{EPSG}.tif')) as src:
-    #     slope = src.read(1)
-    #     profile = src.profile
-    # profile.update(dtype=rasterio.int16, count=1, nodata=0, compress='DEFLATE') # Update the profile for the output raster
-    
-    # if result.sum() > 0:
-    #     # Write the result to a new raster file
-    #     with rasterio.open(os.path.join(richdem_helper_dir, f'north_facing_{region_name_clean}_EPSG{EPSG}.tif'), 'w', **profile) as dst:
-    #         dst.write(result.astype(rasterio.int16), 1)
-    # if result.sum() == 0:
-    #     logging.info('no north-facing pixel exceeding threshold slope')
+    #EPSG4326
+    create_north_facing_pixels(slopeFilePath4326, aspectFilePath4326, region_name_clean, richdem_helper_dir, X, Y, Z)
 
 except Exception as e:
     print(e)

@@ -17,6 +17,7 @@ colors_dict_esa_worldcover2021_int = {
 }
 
 colors_dict_esa_worldcover2021 = {
+    #0: (0,0,0),              # nodata 
     10: (0.0, 0.39215686, 0.0),  # Tree cover
     20: (1.0, 0.73333333, 0.13333333),  # Shrubland
     30: (1.0, 1.0, 0.29803922),  # Grassland
@@ -32,6 +33,7 @@ colors_dict_esa_worldcover2021 = {
 
 
 legend_dict_esa_worldcover2021 = {
+    #0: 'no data',
     10: 'Tree cover',
     20: 'Shrubland',
     30: 'Grassland',
@@ -55,7 +57,7 @@ legend_dict_esa_worldcover2021 = {
 #product user manual with legends: https://land.copernicus.eu/en/technical-library/global-dynamic-land-cover-product-user-manual-v3.0/@@download/file
 
 colors_dict_copernicus_global_coll3_int = {
-    255: (40, 40, 40),        # No input data available
+    255: (40, 40, 40, 0),        # No input data available
     111: (88, 72, 31),        # Closed forest, evergreen needle leaf
     113: (112, 102, 62),      # Closed forest, deciduous needle leaf
     112: (0, 153, 0),         # Closed forest, evergreen, broad leaf
@@ -81,7 +83,7 @@ colors_dict_copernicus_global_coll3_int = {
 }
 
 colors_dict_copernicus_global_coll3 = {
-    255: (0.15686275, 0.15686275, 0.15686275),  # No input data available
+    255: (0.15686275, 0.15686275, 0.15686275, 0),  # No input data available
     111: (0.34509804, 0.28235294, 0.12156863),  # Closed forest, evergreen needle leaf
     113: (0.43921569, 0.4, 0.24313725),  # Closed forest, deciduous needle leaf
     112: (0.0, 0.6, 0.0),  # Closed forest, evergreen, broad leaf

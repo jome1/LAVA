@@ -97,7 +97,7 @@ def geopandas_clip_reproject(geopandas_file, gdf, target_crs):
 
 
 
-def clip_reproject_raster(input_raster_path, region_name_clean, gdf, landcover_elevation, target_crs, resampling_method, output_dir):
+def clip_reproject_raster(input_raster_path, region_name_clean, gdf, landcover_elevation, target_crs, resampling_method, dtype, output_dir):
     """
         Reads a TIFF raster, clips it to the extent of a GeoPandas DataFrame, reprojects it to a given CRS considerung the set resampling method,
         and saves the clipped raster in a specified output folder.
@@ -115,6 +115,13 @@ def clip_reproject_raster(input_raster_path, region_name_clean, gdf, landcover_e
         'nearest': Resampling.nearest,
         'bilinear': Resampling.bilinear,
         'cubic': Resampling.cubic
+    }
+
+    dtype_options = {
+        'int8': rasterio.int8,
+        'uint8': rasterio.uint8,
+        'int16': rasterio.int16,
+        'uint16': rasterio.uint16
     }
 
     with rasterio.open(input_raster_path) as src:
@@ -147,7 +154,7 @@ def clip_reproject_raster(input_raster_path, region_name_clean, gdf, landcover_e
             'transform': transform, 
             'width': width,
             'height': height,
-            'dtype': rasterio.int16
+            'dtype': dtype_options[dtype]
         })
 
         # Create the output file path
