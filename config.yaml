@@ -5,6 +5,7 @@ consider_railways: 0
 consider_roads: 0
 consider_airports: 0
 consider_waterbodies: 0
+
 consider_additional_exclusion_polygons: 0 
 
 consider_WDPA: 0
@@ -18,6 +19,7 @@ EPSG_manual: ''  #if None use empty string
 #name folders and files
 region_folder_name: Elbe-Elster #always needed, same name as in gadm.org (if country is studied, then use country name)
 OSM_folder_name: BerlinBrandenburg #usually same as country_code, only needed if OSM is to be considered
+
 DEM_filename: gebco_cutout.tif 
 landcover_filename: PROBAV_LC100_global_v3.0.1_2019-nrt_Discrete-Classification-map_EPSG-4326.tif
 

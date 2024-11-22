@@ -39,7 +39,7 @@ logging.basicConfig(handlers=[
         logging.StreamHandler()
         ], level=logging.INFO) #source: https://stackoverflow.com/questions/13733552/logger-configuration-to-log-to-file-and-print-to-stdout
 
-with open("config.yaml", "r", encoding="utf-8") as f:
+with open("config_IDN.yaml", "r", encoding="utf-8") as f:
     config = yaml.load(f, Loader=yaml.FullLoader)
 
 #-------data config------- 
@@ -239,8 +239,13 @@ if landcover_source == 'openeo':
 
     output_path = os.path.join(output_dir, f'landcover_{region_name_clean}_EPSG{EPSG}.tif')
 
-    with open(os.path.join(output_dir, f'{region_name_clean}_4326.geojson'), 'r') as file: #use region file in EPSG 4326 because openeo default file is in 4326
-        aoi = json.load(file)
+    if custom_polygon_filename:
+        with open(custom_polygon_filepath, 'r') as file: #use region file in EPSG 4326 because openeo default file is in 4326
+            aoi = json.load(file)
+            logging.info('custom polygon used to clip openeo data')
+    else:
+        with open(os.path.join(output_dir, f'{region_name_clean}_4326.geojson'), 'r') as file: #use region file in EPSG 4326 because openeo default file is in 4326
+            aoi = json.load(file)
 
     datacube_landcover = connection.load_collection("ESA_WORLDCOVER_10M_2021_V2")
     #clip landcover directly to area of interest 
