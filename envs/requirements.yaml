@@ -18,3 +18,9 @@ dependencies:
   - ipython
   - ipykernel
   - openeo
+  - pyrosm
+  - zipfile
+  - io
+  - fiona
+  - requests
+  - pyrosm
