@@ -10,8 +10,7 @@ consider_additional_exclusion_polygons: 0
 
 consider_WDPA: 0
 wdpa_url: 'https://d1gam3xoknrgr2.cloudfront.net/current/WDPA_WDOECM_Nov2024_Public_FRA.zip'
-#montenegro: https://d1gam3xoknrgr2.cloudfront.net/current/WDPA_WDOECM_Oct2024_Public_MNE.zip
-#albania: https://d1gam3xoknrgr2.cloudfront.net/current/WDPA_WDOECM_Oct2024_Public_ALB.zip
+
 
 EPSG_manual: ''  #if None use empty string
 
@@ -27,10 +26,10 @@ landcover_filename: PROBAV_LC100_global_v3.0.1_2019-nrt_Discrete-Classification-
 #Define study region (use geopackage from gadm.org to inspect in QGIS or go on gadm.org)
 #use GADM boundary (https://gadm.org/maps.html)
 region_name: Elbe-Elster
-country_code: DEU #    #PRT  #Städteregion Aachen in level 2 #Porto in level 1 #Elbe-Elster in level 2 #Zell am See in level 2
+country_code: DEU 
 gadm_level: 2
 #or use custom region (if file is passed, then this is used as default over the GADM definitions above)
-custom_polygon_filename: '' #if None use empty string           'Aceh_single.geojson'
+custom_polygon_filename: '' #if None use empty string
 
 
 #north facing pixels to be excluded (pixels with slope bigger X and aspect between Y and Z)
