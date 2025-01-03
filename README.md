@@ -74,10 +74,11 @@ Take additional care when using a study region with a __coastline__. Coastlines 
 
 
 ## 2. Configuration
-In the `config.yaml` file you can configure the data preprocessing and the land exclusion. In the scripts only the name of the `config.yaml` file needs to be changed if necessary.
+In the `config.yaml` file you can configure the data preprocessing and the land exclusion. You can also copy and rename the `config.yaml` if you want to test multiple settings. Be aware that the name of the `config.yaml` file needs to be the same in the scripts.
 
-You can choose which data you want to consider in the preprocessing.
-Moreover, you have to select your study region. When using the automatic download from gadm.org, you have to specify the name of the region (region_name) and the GADM level as it is used by gadm.org. Ideally you download the geopackage of the country you are interested in from [gadm.org](gadm.org) and load it into QGIS to find the right `gadm_level` and `region_name`.
+In the `config.yaml` file you can choose which data you want to consider in the preprocessing.
+You also have to select your study region. When using the automatic download from gadm.org, you have to specify the name of the region (region_name) and the GADM level as it is used by gadm.org. Ideally you download the geopackage of the country you are interested in from [gadm.org](gadm.org) and load it into QGIS to find the right `gadm_level` and `region_name`.
+Finally, you have to specify the land exclusions and buffer zones.
 
 
 ## 3. Spatial data preparation
@@ -110,6 +111,10 @@ With the JupyterNotebook `Atlite_custom_region.ipynb` you can finally derive the
 The code automatically recognizes if a file does not exist and thus does not take into account the respective file for the exclusion (e.g. there is no coastlines files when having a study region without a coast).
 
 
-## 6. More info
+## 6. Bring all files in a QGIS project together
+The script `create_qgis_project.py` puts all files together into a QGIS project to easily display them. This script needs to be used in the 'QGIS environment'. You can install it from the `requirements_qgis.yaml`. Additionally, you have to install the QGIS python package with the same version as your current QGIS installation in that environment.
+
+
+## 7. More info
 * Terrascope API: not implemented because of limited functionalities (e.g. only downloads tiles, data cannot be clipped to area of interest). [API documentation](https://vitobelgium.github.io/terracatalogueclient/api.html), [ESAworldvcover Product](https://docs.terrascope.be/#/DataProducts/WorldCover/WorldCover), 
 
