@@ -9,29 +9,29 @@ consider_military: 0
 
 consider_additional_exclusion_polygons: 0 
 
-consider_WDPA: 0
-wdpa_url: 'https://d1gam3xoknrgr2.cloudfront.net/current/WDPA_WDOECM_Feb2025_Public_CHN.zip'
-
+consider_protected_areas: file #WDPA or file or 0
+wdpa_url: 'https://d1gam3xoknrgr2.cloudfront.net/current/WDPA_WDOECM_Mar2025_Public_CHN.zip'
+protected_areas_filename: 'China_Nature_reserve'
 
 
 EPSG_manual: ''  #if None use empty string
 
 
 #name folders and files
-region_folder_name: Beijing #always needed, same name as in gadm.org (if country is studied, then use country name)
-OSM_folder_name: CHN #usually same as country_code, only needed if OSM is to be considered
+region_folder_name: China #NeiMongol #always needed, same name as in gadm.org (if country is studied, then use country name)
+OSM_folder_name: China #NeiMongol #usually same as country_code, only needed if OSM is to be considered
 
 DEM_filename: gebco_cutout.tif 
-landcover_filename: PROBAV_LC100_global_v3.0.1_2019-nrt_Discrete-Classification-map_EPSG-4326.tif
+landcover_filename: CLDC_v01_2023_EPSG4326.tif
 
 
 #Define study region (use geopackage from gadm.org to inspect in QGIS or go on gadm.org)
 #use GADM boundary (https://gadm.org/maps.html)
-region_name: Beijing #name of region in GADM
+region_name: China  #name of region in GADM
 country_code: CHN #ISO country code
-gadm_level: 1
+gadm_level: 0
 #or use custom region (if file is passed, then this is used as default over the GADM definitions above)
-custom_polygon_filename: 'gadm41_CHN_1_Beijing.json' #if None use empty string
+custom_polygon_filename: 'gadm41_CHN_1.json' #if None use empty string
 
 
 #north facing pixels to be excluded (pixels with slope bigger X and aspect between Y and Z)
@@ -46,7 +46,7 @@ wdpa_consider_status: ["Adopted", "Designated", "Established", "Inscribed"] #all
 
 
 #exclusions (buffer in meters) (here landcover codes for openeo as default example)
-landcover_without_buffer: [80,111,114,115,116] #list of landcover codes
+landcover_without_buffer: [10,40,80] #list of landcover codes
 landcover_with_buffer: #dictionary of landcover code with corresponding buffer
   50: 500
 

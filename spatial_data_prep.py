@@ -52,7 +52,7 @@ consider_waterbodies = config['consider_waterbodies']
 consider_military = config['consider_military']  
 consider_additional_exclusion_polygons = config['consider_additional_exclusion_polygons']
 EPSG_manual = config['EPSG_manual']  #if None use empty string
-consider_WDPA = config['consider_WDPA']
+consider_protected_areas = config['consider_protected_areas']
 wdpa_url = config['wdpa_url']
 
 #----------------------------
@@ -85,7 +85,7 @@ data_path = os.path.join(dirname, 'Raw_Spatial_Data')
 landcoverRasterPath = os.path.join(data_path, landcover_filename)
 demRasterPath = os.path.join(data_path, 'DEM', DEM_filename)
 coastlinesFilePath = os.path.join(data_path, 'GOAS', 'goas.gpkg')
-wdpa_folder = os.path.join(data_path, 'WDPA')
+protected_areas_folder = os.path.join(data_path, 'Protected_areas')
 if consider_railways == 1 or consider_roads == 1 or consider_airports == 1 or consider_waterbodies == 1:
     OSM_country_path = os.path.join(data_path, 'OSM', OSM_folder_name) 
 
@@ -150,7 +150,7 @@ region_copy['buffered']=region_copy.buffer(1000)
 # Convert buffered region back to EPSC 4326 to get bounding box latitude and longitude 
 region_buffered_4326 = region_copy.set_geometry('buffered').to_crs(epsg=4326)
 bounding_box = region_buffered_4326['buffered'].total_bounds 
-logging.info(f"Bounding box in EPSG 4326: \nminx: {bounding_box[0]}, miny: {bounding_box[1]}, maxx: {bounding_box[2]}, maxy: {bounding_box[3]}")
+logging.info(f"Bounding box in EPSG 4326:\nminx: {bounding_box[0]}, miny: {bounding_box[1]}, maxx: {bounding_box[2]}, maxy: {bounding_box[3]}")
 
 
 #clip global oceans and seas file to study region for coastlines
@@ -269,7 +269,7 @@ if landcover_source == 'openeo':
     #clip landcover directly to area of interest 
     masked_landcover = datacube_landcover.mask_polygon(aoi)
     #reproject landcover to EPSG 32633 and dont change resolution thereby
-    landcover = masked_landcover.resample_spatial(projection=EPSG, resolution=0) #resolution=0 does not change resolution
+    landcover = masked_landcover.resample_spatial(projection=EPSG, resolution=1000, method= "near") #resolution=0 does not change resolution
     
     result = landcover.save_result('GTiFF')
     job_options = {
@@ -340,8 +340,9 @@ except Exception as e:
 
 
 #download WDPA (WDPA is country specific, so the protected areas for a custom polygon spanning over multiple countries cannot be obtained)
-if consider_WDPA == 1:
+if consider_protected_areas == "WDPA":
     print('processing protected areas')
+    wdpa_folder = os.path.join(protected_areas_folder, 'WPDA')
     if find_folder(wdpa_folder, string_in_name=country_code) is None:
         # if there is no folder already existing then create one and download the WDPA
         WDPA_country_folder = os.path.join(wdpa_folder, f'WDPA_{country_code}')
@@ -356,13 +357,17 @@ if consider_WDPA == 1:
     else:
         logging.info('folder with protected areas of country of study region already exists')
         WDPA_country_folder = os.path.join(wdpa_folder, f'WDPA_{country_code}')
+    protected_areas_FilePath=os.path.join(WDPA_country_folder, f'WDPA_{country_code}.gpkg')
 
-    #clip WDPA to study region
-    wdpaFilePath = os.path.join(WDPA_country_folder, f'{country_code}_WDPA.gpkg')
-    wdpa_file = gpd.read_file(wdpaFilePath)
-    wdpa_file = geopandas_clip_reproject(wdpa_file, region, EPSG)
-    if not wdpa_file.empty:
-        wdpa_file.to_file(os.path.join(output_dir, f'protected_areas_{region_name_clean}_{EPSG}.gpkg'), driver='GPKG', encoding='utf-8')
+elif consider_protected_areas == "file":
+    protected_areas_filename=config['protected_areas_filename']
+    protected_areas_FilePath = os.path.join(protected_areas_folder, f'{protected_areas_filename}.gpkg')
+
+    #clip projected areas to study region
+    protected_areas = gpd.read_file(protected_areas_FilePath)
+    protected_areas = geopandas_clip_reproject(protected_areas, region, EPSG)
+    if not protected_areas.empty:
+        protected_areas.to_file(os.path.join(output_dir, f'protected_areas_{region_name_clean}_{EPSG}.gpkg'), driver='GPKG', encoding='utf-8')
     else:
         logging.info("No protected areas found in the region. File not saved.")
 
