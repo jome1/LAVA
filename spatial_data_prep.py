@@ -68,7 +68,7 @@ region_name = config['region_name'] #if country is studied, then use country nam
 country_code = config['country_code']  #3-digit ISO code  #PRT  #Städteregion Aachen in level 2 #Porto in level 1 #Elbe-Elster in level 2 #Zell am See in level 2 - to be adapted for china
 gadm_level = config['gadm_level']
 #or use custom region
-custom_polygon_filename = config['custom_polygon_filename'] #if None use empty string           'Aceh_single.geojson'
+custom_study_area_filename = config['custom_study_area_filename'] #if None use empty string           'Aceh_single.geojson'
 ##################################################
 #north facing pixels
 X = config['X']
@@ -85,7 +85,7 @@ data_path = os.path.join(dirname, 'Raw_Spatial_Data')
 landcoverRasterPath = os.path.join(data_path, landcover_filename)
 demRasterPath = os.path.join(data_path, 'DEM', DEM_filename)
 coastlinesFilePath = os.path.join(data_path, 'GOAS', 'goas.gpkg')
-protected_areas_folder = os.path.join(data_path, 'Protected_areas')
+protected_areas_folder = os.path.join(data_path, 'protected_areas')
 if consider_railways == 1 or consider_roads == 1 or consider_airports == 1 or consider_waterbodies == 1:
     OSM_country_path = os.path.join(data_path, 'OSM', OSM_folder_name) 
 
@@ -101,13 +101,14 @@ region_name_clean = region_name_clean.replace("'", "")
 output_dir = os.path.join(dirname, 'data', f'{region_folder_name}')
 os.makedirs(output_dir, exist_ok=True)
 
-
+print()
+print()
 logging.info(f'Prepping {region_name}...')
 
 #get region boundary
-if custom_polygon_filename:
-    custom_polygon_filepath = os.path.join('Raw_Spatial_Data','custom_polygon', custom_polygon_filename)
-    region = gpd.read_file(custom_polygon_filepath)
+if custom_study_area_filename:
+    custom_study_area_filepath = os.path.join('Raw_Spatial_Data','custom_study_area', custom_study_area_filename)
+    region = gpd.read_file(custom_study_area_filepath)
     if region.crs != 4326:
         logging.warning('crs of custom polygon file for study region is not in EPSG 4326')
     logging.info('using custom polygon for study area')
@@ -191,7 +192,7 @@ if consider_roads == 1:
     OSM_roads_filtered = OSM_roads[OSM_roads['code'].isin([5111, 5112, 5113, 5114, 5115, 5121, 5131, 5132, 5133, 5134, 5135])]
     #OSM_roads_clipped_filtered = OSM_roads_clipped[~OSM_roads_clipped['code'].isin([5141])] #keep all roads except with code listed (eg 5141)
     #reset index for clean, zero-based index of filtered data
-    OSM_roads_filtered.reset_index(drop=True, inplace=True)
+    OSM_roads_filtered.reset_index(drop=True, inplace=True) 
     #save file
     OSM_roads_filtered.to_file(os.path.join(output_dir, f'OSM_roads_{region_name_clean}_{EPSG}.gpkg'), driver='GPKG', encoding='utf-8')
 
@@ -209,7 +210,7 @@ if consider_airports == 1:
 if consider_waterbodies == 1:
     print('processing waterbodies')
     OSM_file = gpd.read_file(os.path.join(OSM_country_path, f'gis_osm_water_a_free_1.shp'))
-    OSM_waterbodies = geopandas_clip_reproject(OSM_file, region, EPSG) #all transport fclasses from the OSM file 
+    OSM_waterbodies = geopandas_clip_reproject(OSM_file, region, EPSG) #all water fclasses from the OSM file 
     OSM_waterbodies_filtered = OSM_waterbodies[OSM_waterbodies['code'].isin([8200, 8201, 8202])] #8200: unspecified waterbodies like lakes, 8201: reservoir, 8202: river
     # Check if OSM_waterbodies_filtered is not empty before saving
     if not OSM_waterbodies_filtered.empty:
@@ -221,7 +222,8 @@ if consider_waterbodies == 1:
 if consider_military == 1:
     print('processing military areas')
     OSM_file = gpd.read_file(os.path.join(OSM_country_path, f'gis_osm_landuse_a_free_1.shp'))
-    OSM_military = geopandas_clip_reproject(OSM_file, region, EPSG)
+    OSM_landuses_clipped = geopandas_clip_reproject(OSM_file, region, EPSG) #all landuses fclasses from the OSM file 
+    OSM_military = OSM_landuses_clipped[OSM_landuses_clipped['code'].isin([7213])] #7213: military
     # Check if OSM_military is not empty before saving
     if not OSM_military.empty:
         OSM_military.to_file(os.path.join(output_dir, f'OSM_military_{region_name_clean}_{EPSG}.gpkg'), driver='GPKG', encoding='utf-8')
@@ -250,41 +252,70 @@ if consider_additional_exclusion_polygons == 1:
 
 
 
-print('processing landcover')
 if landcover_source == 'openeo':
+    print('processing landcover')
     logging.info('using openeo to get landcover')
 
-    connection = openeo.connect(url="openeo.dataspace.copernicus.eu").authenticate_oidc()
-
     output_path = os.path.join(output_dir, f'landcover_{region_name_clean}_EPSG{EPSG}.tif')
-
-    if custom_polygon_filename:
-        with open(custom_polygon_filepath, 'r',encoding='utf8') as file: #use region file in EPSG 4326 because openeo default file is in 4326
-            aoi = json.load(file) #load polygon for clipping with openeo            
-    else:
-        with open(os.path.join(output_dir, f'{region_name_clean}_4326.geojson'), 'r',encoding='utf8') as file: #use region file in EPSG 4326 because openeo default file is in 4326
-            aoi = json.load(file)
-
-    datacube_landcover = connection.load_collection("ESA_WORLDCOVER_10M_2021_V2")
-    #clip landcover directly to area of interest 
-    masked_landcover = datacube_landcover.mask_polygon(aoi)
-    #reproject landcover to EPSG 32633 and dont change resolution thereby
-    landcover = masked_landcover.resample_spatial(projection=EPSG, resolution=1000, method= "near") #resolution=0 does not change resolution
     
-    result = landcover.save_result('GTiFF')
-    job_options = {
-        "do_extent_check": False,
-        "executor-memory": "5G", #set executer-memory higher to process larger regions; see https://forum.dataspace.copernicus.eu/t/batch-process-error-when-using-certain-region/1454 
-        } #see also https://discuss.eodc.eu/t/memory-overhead-problem/424
-    # Creating a new batch job at the back-end by sending the datacube information.
-    job = result.create_job(job_options=job_options, title=f'landcover_{region_name_clean}_{EPSG}')
-    # Starts the job and waits until it finished to download the result.
-    job.start_and_wait()
-    job.get_results().download_file(output_path) 
+    if not os.path.exists(output_path):
+        connection = openeo.connect(url="openeo.dataspace.copernicus.eu").authenticate_oidc()
+
+        if custom_study_area_filename:
+            with open(custom_study_area_filepath, 'r') as file: #use region file in EPSG 4326 because openeo default file is in 4326
+                aoi = json.load(file) #load polygon for clipping with openeo            
+        else:
+            with open(os.path.join(output_dir, f'{region_name_clean}_4326.geojson'), 'r') as file: #use region file in EPSG 4326 because openeo default file is in 4326
+                aoi = json.load(file)
+
+        datacube_landcover = connection.load_collection("ESA_WORLDCOVER_10M_2021_V2")
+        #clip landcover directly to area of interest 
+        masked_landcover = datacube_landcover.mask_polygon(aoi)
+        #reproject landcover to EPSG 32633 and dont change resolution thereby
+        landcover = masked_landcover.resample_spatial(projection=EPSG, resolution=0) #resolution=0 does not change resolution
+        
+        result = landcover.save_result('GTiFF')
+        job_options = {
+            "do_extent_check": False,
+            "executor-memory": "5G", #set executer-memory higher to process larger regions; see https://forum.dataspace.copernicus.eu/t/batch-process-error-when-using-certain-region/1454 
+            } #see also https://discuss.eodc.eu/t/memory-overhead-problem/424
+        # Creating a new batch job at the back-end by sending the datacube information.
+        job = result.create_job(job_options=job_options, title=f'landcover_{region_name_clean}_{EPSG}')
+        # Starts the job and waits until it finished to download the result.
+        job.start_and_wait()
+        job.get_results().download_file(output_path) 
+
+        #save pixel size and unique land cover codes
+        landcover_information(output_path, output_dir, region_name, EPSG)
+
+        #color openeo landcover file
+        try:
+            from utils import legends 
+            colors_dict_int = getattr(legends, 'colors_dict_esa_worldcover2021_int') #color codes as RGB integers
+            with rasterio.open(output_path) as landcover:
+                band = landcover.read(1, masked=True) # Read the first band, masked=True is masking no data values
+                meta = landcover.meta
+                colors_dict_int_sorted = dict(sorted(colors_dict_int.items())) #can only write color values as int with rasterio 
+                meta.update({'compress': 'DEFLATE'}) # You can also try 'DEFLATE', 'JPEG', or 'PACKBITS'
+                #save colored version
+                with rasterio.open(os.path.join(output_dir, f'landcover_colored_{region_name}_EPSG{EPSG}.tif'), 'w', **meta) as dst:
+                    dst.write(band, indexes=1)
+                    dst.write_colormap(1, colors_dict_int_sorted) #be aware of dtype: landcover file is saved with int16, so RGB color values also needs to be an integer?
+        except Exception as e:
+            print(e)
+            logging.warning('Something went wrong with coloring the landcover data')
+    
+    elif os.path.exists(output_path):
+        logging.info('Landcover not downloaded from openeo. There is already a clipped landcover file in the output folder.')
+
+
 
 if landcover_source == 'file':
+    print('processing landcover')
     logging.info('using local file to get landcover')
     clip_reproject_raster(landcoverRasterPath, region_name_clean, region, 'landcover', EPSG, 'nearest', 'int16', output_dir)
+    clipped_landcoverRasterPath = os.path.join(output_dir, f'landcover_{region_name_clean}_EPSG{EPSG}.tif')
+    landcover_information(clipped_landcoverRasterPath, output_dir, region_name, EPSG)
 
 
 print('processing DEM') #block comment: SHIFT+ALT+A, multiple line comment: STRG+#
@@ -339,35 +370,39 @@ except Exception as e:
     logging.warning('Something went wrong with DEM')
 
 
+#protected areas
 #download WDPA (WDPA is country specific, so the protected areas for a custom polygon spanning over multiple countries cannot be obtained)
-if consider_protected_areas == "WDPA":
+if consider_protected_areas == 'WDPA' or consider_protected_areas == 'file':
     print('processing protected areas')
-    wdpa_folder = os.path.join(protected_areas_folder, 'WPDA')
-    if find_folder(wdpa_folder, string_in_name=country_code) is None:
-        # if there is no folder already existing then create one and download the WDPA
-        WDPA_country_folder = os.path.join(wdpa_folder, f'WDPA_{country_code}')
-        os.makedirs(WDPA_country_folder, exist_ok=True)
-        if country_code in wdpa_url: #check if provided URL matches with country of study region
-            #donwload and convert to geopackage
-            download_unpack_zip(wdpa_url, WDPA_country_folder)
-            gdb_folder = find_folder(WDPA_country_folder, file_ending='.gdb') #gdb means geodatabase
-            convert_gdb_to_gpkg(gdb_folder, WDPA_country_folder, f'{country_code}_WDPA.gpkg')
+    if consider_protected_areas == 'WDPA':    
+        logging.info('using WDPA')
+        if find_folder(protected_areas_folder, string_in_name=country_code) is None:
+            # if there is no folder already existing then create one and download the WDPA
+            WDPA_country_folder = os.path.join(protected_areas_folder, f'WDPA_{country_code}')
+            os.makedirs(WDPA_country_folder, exist_ok=True)
+            if country_code in wdpa_url: #check if provided URL matches with country of study region
+                #donwload and convert to geopackage
+                download_unpack_zip(wdpa_url, WDPA_country_folder)
+                gdb_folder = find_folder(WDPA_country_folder, file_ending='.gdb') #gdb means geodatabase
+                convert_gdb_to_gpkg(gdb_folder, WDPA_country_folder, f'{country_code}_WDPA.gpkg')
+            else:
+                logging.warning('No WDPA downloaded. URL and country code do not match')
         else:
-            logging.warning('No WDPA downloaded. URL and country code do not match')
-    else:
-        logging.info('folder with protected areas of country of study region already exists')
-        WDPA_country_folder = os.path.join(wdpa_folder, f'WDPA_{country_code}')
-    protected_areas_FilePath=os.path.join(WDPA_country_folder, f'WDPA_{country_code}.gpkg')
+            logging.info('folder with protected areas of country of study region already exists')
+            WDPA_country_folder = os.path.join(protected_areas_folder, f'WDPA_{country_code}')
+        
+        protected_areas_filepath = os.path.join(WDPA_country_folder, f'{country_code}_WDPA.gpkg')
 
-elif consider_protected_areas == "file":
-    protected_areas_filename=config['protected_areas_filename']
-    protected_areas_FilePath = os.path.join(protected_areas_folder, f'{protected_areas_filename}.gpkg')
+    elif consider_protected_areas == 'file':
+        logging.info("using local file for protected areas")
+        protected_areas_filename=config['protected_areas_filename']
+        protected_areas_filepath = os.path.join(protected_areas_folder, protected_areas_filename)
 
-    #clip projected areas to study region
-    protected_areas = gpd.read_file(protected_areas_FilePath)
-    protected_areas = geopandas_clip_reproject(protected_areas, region, EPSG)
-    if not protected_areas.empty:
-        protected_areas.to_file(os.path.join(output_dir, f'protected_areas_{region_name_clean}_{EPSG}.gpkg'), driver='GPKG', encoding='utf-8')
+    #clip to study region (WDPA or local file)
+    protected_areas_file = gpd.read_file(protected_areas_filepath)
+    protected_areas_file = geopandas_clip_reproject(protected_areas_file, region, EPSG)
+    if not protected_areas_file.empty:
+        protected_areas_file.to_file(os.path.join(output_dir, f'protected_areas_{region_name_clean}_{EPSG}.gpkg'), driver='GPKG', encoding='utf-8')
     else:
         logging.info("No protected areas found in the region. File not saved.")
 

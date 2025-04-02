@@ -5,6 +5,7 @@ import yaml
 from unidecode import unidecode
 import pickle
 
+
 from qgis.core import (
     QgsApplication,
     QgsVectorLayer,

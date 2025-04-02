@@ -11,6 +11,8 @@
 !Raw_Spatial_Data
 !Raw_Spatial_Data/DEM
 !Raw_Spatial_Data/DEM/.gitkeep
+!Raw_Spatial_Data/protected_areas
+!Raw_Spatial_Data/protected_areas/.gitkeep
 !Raw_Spatial_Data/OSM
 !Raw_Spatial_Data/OSM/.gitkeep
 !Raw_Spatial_Data/GOAS
@@ -27,3 +29,9 @@
 !GLAES_Aachen_test_data.ipynb
 !Atlite_custom_region.ipynb
 !create_qgis_project.py
+!other
+!other/pyrosm_test.ipynb
+!other/OSMnx.ipynb
+!other/earthOSM_test.ipynb
+!other/color_raster_file.ipynb
+!other/resampling_reprojecting.ipynb

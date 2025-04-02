@@ -177,6 +177,7 @@ def clip_reproject_raster(input_raster_path, region_name_clean, gdf, landcover_e
                     resampling=resampling_options[resampling_method])
                 
             print(f'reprojected raster CRS: {dst.crs}')
+    
 
 
 
@@ -287,6 +288,24 @@ def co_register(infile, match, resampling_method, outfile): #source: https://pyg
                     dst_transform=dst_transform,
                     dst_crs=dst_crs,
                     resampling=resampling_options[resampling_method])
+                
+
+
+def landcover_information(landcoverRasterPath, data_path, region_name, EPSG):
+    # Open the raster using a context manager
+    with rasterio.open(landcoverRasterPath) as landcover:
+        band = landcover.read(1, masked=True) # Read the first band, masked=True is masking no data values
+        
+        res = landcover.transform[0] #pixel size
+        #save pixel size local CRS
+        with open(os.path.join(data_path, f'pixel_size_{region_name}_{EPSG}.json'), 'w') as fp:
+            json.dump(res, fp)
+
+        #Available land cover codes
+        land_codes = np.unique(band.data).tolist()
+        #save landuses as json file
+        with open(os.path.join(data_path, f'landuses_{region_name}.json'), 'w') as fp:
+            json.dump(land_codes, fp)
                 
 
 
