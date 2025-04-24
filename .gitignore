@@ -9,6 +9,8 @@
 !utils/data_preprocessing.py
 !utils/README.md
 !Raw_Spatial_Data
+!Raw_Spatial_Data/landcover
+!Raw_Spatial_Data/landcover/.gitkeep
 !Raw_Spatial_Data/DEM
 !Raw_Spatial_Data/DEM/.gitkeep
 !Raw_Spatial_Data/protected_areas
