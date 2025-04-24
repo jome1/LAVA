@@ -1,11 +1,11 @@
 #data config 
-landcover_source: ''   #'file' or 'openeo' or leave empty to not download (DEM data depends on landcover data due to co-registering)
-consider_coastlines: 0
-consider_railways: 0
-consider_roads: 0
-consider_airports: 0
-consider_waterbodies: 0
-consider_military: 0
+landcover_source: 'openeo'   #'file' or 'openeo' or leave empty to not download (DEM data depends on landcover data due to co-registering)
+consider_coastlines: 1
+consider_railways: 1
+consider_roads: 1
+consider_airports: 1
+consider_waterbodies: 1
+consider_military: 1
 
 consider_additional_exclusion_polygons: 0 
 
@@ -31,7 +31,7 @@ region_name: China  #name of region in GADM
 country_code: CHN #ISO country code
 gadm_level: 0
 #or use custom region (if file is passed, then this is used as default over the GADM definitions above)
-custom_polygon_filename: 'gadm41_CHN_1.json' #if None use empty string
+custom_study_area_filename: 'Elbe-Elster_4326.geojson' #if None use empty string
 
 
 #north facing pixels to be excluded (pixels with slope bigger X and aspect between Y and Z)

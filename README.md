@@ -1,6 +1,6 @@
 # LAVA - *L*and *A*nalysis and a*VA*ilability
 
-LAVA is a tool to calculate the available area in a user defined study region for building renewable energies like solar PV and wind onshore.
+LAVA is a tool to calculate the available area in a user defined study region for building renewable energy generators like utility-scale solar PV and wind onshore.
 First, all needed data is preprocessed to bring it into the right format. This data can be analyzed to get a better understanding of the study region. Finally, the land eligibility analysis is done with [`atlite`](https://github.com/PyPSA/atlite) or [`GLAES`](https://github.com/FZJ-IEK3-VSA/glaes) (GLAES does not work fully yet).
 
 
@@ -8,15 +8,15 @@ First, all needed data is preprocessed to bring it into the right format. This d
 
 
 ## 0. Files setup
-__a) clone the repository:__
+__a) clone the repository (using Git Bash):__
 
-`% git clone https://github.com/jome1/LAVA.git`
+`git clone https://github.com/jome1/LAVA.git`
 
-After cloning, navigate to the top-level folder of the repo.
+After cloning, navigate to the top-level folder of the repo in your command window.
 
 __b) install python dependencies__
 
-The Python package requirements to use these tools are in the `requirements.yaml` file. You can install these requirements in a new environment using `conda`:
+The Python package requirements to use the LAVA tool are in the `requirements.yaml` file. You can install these requirements in a new environment using `conda`:
 
 `conda env create -f envs/requirements.yaml`
 
@@ -34,15 +34,15 @@ Following data must be downloaded:
 * __DEM__: [GEBCO Gridded Bathymetry Data](https://download.gebco.net/) is a continuous, global terrain model for ocean and land with a spatial resolution of 15 arc seconds (ca. 450m). Use the download tool. Select a larger area around your study region. Set a tick for a GeoTIFF file under "Grid" and download the file from the basket. Put the file into the folder __"DEM"__ (digital elevation model) and name it __*gebco_cutout.tif*__. This data provides the elevation in each pixel. It is also possible to use a different dataset.
 
 * __landcover__: The user can decide to automatically fetch ESAworldcover data (resolution of ~10m) via the openEO-API (see instructions later on this page) or to use a local file. This needs to be specified in the config.yaml file. 
-[CORINE landcover global dataset](https://zenodo.org/records/3939050) is a recommended file with global landcover data. But it only has a resolution of ~100m. Download the file from zenodo named __*PROBAV_LC100_global_v3.0.1_2019-nrt_Discrete-Classification-map_EPSG-4326.tif*__. Leave the name as it is and put it in the __"Raw_Spatial_Data"__ folder. :warning: Attention: the file size is 1.7 GB
-You can also use landcover data from a different data source (then the coloring needs to be adjusted). Instead of using the CORINE global landcover dataset you can also setup a connection vie `openEO` to use the ESAworldcover data with a resolution of ~10m.
+[CORINE landcover global dataset](https://zenodo.org/records/3939050) is a recommended file with global landcover data. But it only has a resolution of ~100m. If you want to use it, you need to download the file from zenodo named __*PROBAV_LC100_global_v3.0.1_2019-nrt_Discrete-Classification-map_EPSG-4326.tif*__. Leave the name as it is and put it in the __"Raw_Spatial_Data"__ folder. :warning: Attention: the file size is 1.7 GB
+You can also use landcover data from a different data source (then the coloring needs to be adjusted). 
 
 * __OSM__: [OpenStreetMap Shapefile](https://download.geofabrik.de/) contains tons of geodata. Download the file of the country or region where your study region is located. Click on the relevant continent and then country to download the ´.shp.zip´. Somtimes you can go even more granular by clicking on the country. The best is, to use the smallest available area where your study region is still inside to save storage space. Be aware of the files naming. Unzip and put the downloaded OSM data folder inside the __"OSM"__-folder.  
 The OSM data is used to extract railways, roads and airports. Be aware, that these files can quickly become big making the calculations slow. Handle roads with caution. Often there are many roads which leads to big files.
 
 * __Coastlines__: [Global Oceans and Seas](https://marineregions.org/downloads.php) contains all oceans and seas. It is used to buffer the coastlines. This file is only needed, when the study region has a coastline. Click on "Global Oceans and Seas" and download the geopackage. Unzip, name the file __*"goas.gpkg"*__ and put it into the folder __"GOAS"__ in the __"Raw_Spatial_Data"__ folder.
 
-*  __Protected Areas__: [World Database of Protected Areas](https://www.protectedplanet.net/en/search-areas?filters%5Bdb_type%5D%5B%5D=wdpa&geo_type=country) is a global database on protected areas. Search the country your study area is located in. Click on "Download" > "File Geodatabase" > "Continue" under Non Commercial Use, then right click on the download button and copy the link address behind the download button. Paste this link in the `config.yaml` behind "WDPA_link". This will automatically download, clip and reproject the protected areas within your study area.
+*  __Protected Areas__: [World Database of Protected Areas](https://www.protectedplanet.net/en/search-areas?filters%5Bdb_type%5D%5B%5D=wdpa&geo_type=country) is a global database on protected areas. Search the country your study area is located in. Click on "Download" > "File Geodatabase" > "Continue" under Non Commercial Use, then right click on the download button and copy the link address behind the download button. Paste this link in the `config.yaml` behind "WDPA_url". This will automatically download, clip and reproject the protected areas within your study area. You can also use your own, locally stored file with protected areas by setting the right options in `config.yaml`.
 
 
 > [!NOTE]
@@ -77,14 +77,14 @@ Take additional care when using a study region with a __coastline__. Coastlines 
 In the `config.yaml` file you can configure the data preprocessing and the land exclusion. You can also copy and rename the `config.yaml` if you want to test multiple settings. Be aware that the name of the `config.yaml` file needs to be the same in the scripts.
 
 In the `config.yaml` file you can choose which data you want to consider in the preprocessing.
-You also have to select your study region. When using the automatic download from gadm.org, you have to specify the name of the region (region_name) and the GADM level as it is used by gadm.org. Ideally you download the geopackage of the country you are interested in from [gadm.org](gadm.org) and load it into QGIS to find the right `gadm_level` and `region_name`.
+You also have to select your study region. When using the automatic download from gadm.org, you have to specify the name of the region (region_name) and the GADM level as it is used by gadm.org. Ideally you download the geopackage of the country you are interested in from [gadm.org](gadm.org) and load it into QGIS to find the right `gadm_level` and `region_name`. For some countries there are troubles downloading administrative boundaries from gadm.org. Then you must use your own custom study area file.
 Finally, you have to specify the land exclusions and buffer zones.
 
 
 ## 3. Spatial data preparation
 The script `spatial_data_prep.py` performs multiple data preprocessing steps to facilitate the land analysis and land eligibility study:
 * download administrative boundary of the study region from [gadm.org](gadm.org) using the package pygadm or use a custom polygon instead if wished (custom polygon needs to be put to the right folder wihtin __"Raw_Spatial_Data"__ folder) (alternative sources for administrative boundaries [here](https://x.com/yohaniddawela/status/1828026372968603788); nice tool with online visualization and download [here](https://mapscaping.com/country-boundary-viewer/))
-* calculate the local UTM zone
+* calculate the local UTM zone (you can also set the projected CRS manually)
 * clip and reproject to local UTM zone OSM railways, roads, airports and waterways (roads are also filtered to only consider main roads; hard-coded in the script)
 * clip and reproject landcover data and elevation data. 
 * create a slope map from the elevation data (calculated internally using `richdem`)
@@ -100,6 +100,8 @@ The files are saved to a folder within the __"data"__-folder named according to 
 
 
 ## 4. Land analysis
+:warning: use with caution, some functions were copied to spatial_data_prep.py (e.g. coloring of ESAworldcover from openeo, pixel size, ...)
+
 With the JupyterNotebook `data_exploration.ipynb` you can inspect the spatial data of your study region.
 In the second code cell just put the name of your study region as the folder with the preprocessed data is named. Additionally, put the right name of your landcover_source to fetch the correct legend and color dictionary.
 
@@ -112,7 +114,9 @@ The code automatically recognizes if a file does not exist and thus does not tak
 
 
 ## 6. Bring all files in a QGIS project together
-The script `create_qgis_project.py` puts all files together into a QGIS project to easily display them. This script needs to be used in the 'QGIS environment'. You can install it from the `requirements_qgis.yaml`. Additionally, you have to install the QGIS python package with the same version as your current QGIS installation in that environment.
+The script `create_qgis_project.py` puts all files together into a QGIS project to easily display them. This script needs to be used in the 'QGIS environment'. You can install it from the `requirements_qgis.yaml`. Additionally, you have to install the QGIS python package with the same version as your current QGIS installation in that environment. Sometimes you need to uninstall the python version in your environment and then install the QGIS python package inside in order to avoid trouble with package dependencies.
+
+`conda install -c conda-forge qgis=VERSIONNUMBER`
 
 
 ## 7. More info / notes
