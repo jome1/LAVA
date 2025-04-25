@@ -1,15 +1,18 @@
 #data config 
 landcover_source: 'openeo'   #'file' or 'openeo' or leave empty to not download (DEM data depends on landcover data due to co-registering)
-consider_coastlines: 1
-consider_railways: 1
-consider_roads: 1
-consider_airports: 1
-consider_waterbodies: 1
-consider_military: 1
+consider_coastlines: 0
+consider_railways: 0
+consider_roads: 0
+consider_airports: 0
+consider_waterbodies: 0
+consider_military: 0
+consider_wind_atlas: 0
+consider_solar_atlas: 1
+country_name_solar_atlas: Germany 
 
 consider_additional_exclusion_polygons: 0 
 
-consider_protected_areas: WDPA #WDPA or file or 0
+consider_protected_areas: 0 #WDPA or file or 0
 wdpa_url: 'https://d1gam3xoknrgr2.cloudfront.net/current/WDPA_WDOECM_Mar2025_Public_DEU.zip'
 protected_areas_filename: '' #include file ending (.gpkg or .geojson), needs to be in EPSG4326
 
@@ -28,7 +31,7 @@ landcover_filename: PROBAV_LC100_global_v3.0.1_2019-nrt_Discrete-Classification-
 #Define study region (use geopackage from gadm.org to inspect in QGIS or go on gadm.org)
 #use GADM boundary (https://gadm.org/maps.html)
 region_name: Elbe-Elster
-country_code: DEU 
+country_code: DEU       #always needed (also for global wind atlas)
 gadm_level: 2
 #or use custom region (if file is passed, then this is used as default over the GADM definitions above)
 custom_study_area_filename: '' #if None use empty string
