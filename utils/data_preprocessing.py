@@ -441,23 +441,40 @@ def download_global_solar_atlas(country_name: str, data_path: str, measure = 'LT
     country_name_with_hyphens = country_name.replace(" ", "-")
 
     # Construct the download URL
+    # single country
     url = f"https://api.globalsolaratlas.info/download/{encoded_country_name}/{country_name_with_hyphens}_GISdata_{measure}_GlobalSolarAtlas-v2_GEOTIFF.zip"
-    print(f"Downloading data solar data for '{country_name}' from: {url}")
-    response = requests.get(url)
+    timeout = 300 # 5 Minutes
+    # or whole world
+    if country_name=='world':
+        url = 'https://api.globalsolaratlas.info/download/World/World_PVOUT_GISdata_LTAy_AvgDailyTotals_GlobalSolarAtlas-v2_GEOTIFF.zip'
+        print("Attention: solar atlas whole world is a very big file! (ca. 350MB)")
+        timeout = 900 # 15 Minutes
+    print(f"Downloading solar data for '{country_name}' from: {url}")
+    
+    
+    # donwload  
+    try:
+        response = requests.get(url, timeout=timeout)  
+        if response.status_code == 200:
+            print("Download successful. Extracting files...")
 
-    if response.status_code == 200:
-        print("Download successful. Extracting files...")
+            with zipfile.ZipFile(io.BytesIO(response.content)) as zip_ref:
+                zip_ref.extractall(os.path.join(data_path, 'global_solar_wind_atlas'))
 
-        with zipfile.ZipFile(io.BytesIO(response.content)) as zip_ref:
-            zip_ref.extractall(os.path.join(data_path, 'global_solar_wind_atlas'))
+            print(f"Files extracted to '{os.path.join(data_path, 'global_solar_wind_atlas')}'")
 
-        print(f"Files extracted to '{os.path.join(data_path, 'global_solar_wind_atlas')}'")
-
-        # Assuming the zip contains a single folder (standard GSA structure)
-        folder_name = zip_ref.namelist()[0].split('/')[0]  # top-level folder name
-        return folder_name
-    else:
-        print(f"Failed to download data for '{country_name}'. Status code: {response.status_code}")
+            # Assuming the zip contains a single folder (standard GSA structure)
+            folder_name = zip_ref.namelist()[0].split('/')[0]  # top-level folder name
+            return folder_name
+        else:
+            print(f"Failed to download data for '{country_name}'. Status code: {response.status_code}")
+            
+    except requests.Timeout:
+        print(f"Download solar atlas data timed out after {timeout} seconds for '{country_name}'.")
+        return None
+    except Exception as e:
+        print(f"An error occurred: {e}")
+        return None
 
 
 
