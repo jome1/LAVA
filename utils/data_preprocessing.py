@@ -451,17 +451,20 @@ def download_global_solar_atlas(country_name: str, data_path: str, measure = 'LT
         timeout = 900 # 15 Minutes
     print(f"Downloading solar data for '{country_name}' from: {url}")
     
+    # Define the full extraction path
+    extract_folder = os.path.join(data_path, 'global_solar_wind_atlas', f"{country_name}_solar_atlas")
+    os.makedirs(extract_folder, exist_ok=True)
     
-    # donwload  
+    # download  
     try:
         response = requests.get(url, timeout=timeout)  
         if response.status_code == 200:
             print("Download successful. Extracting files...")
 
             with zipfile.ZipFile(io.BytesIO(response.content)) as zip_ref:
-                zip_ref.extractall(os.path.join(data_path, 'global_solar_wind_atlas'))
+                zip_ref.extractall(extract_folder)
 
-            print(f"Files extracted to '{os.path.join(data_path, 'global_solar_wind_atlas')}'")
+            print(f"Files extracted to '{extract_folder}'")
 
             # Assuming the zip contains a single folder (standard GSA structure)
             folder_name = zip_ref.namelist()[0].split('/')[0]  # top-level folder name

@@ -434,9 +434,16 @@ if consider_wind_atlas == 1:
 #global solar atlas (no check whether file already exists)
 if consider_solar_atlas == 1:
     country_name_solar_atlas = config['country_name_solar_atlas']
-    solar_atlas_measure = config['measure']  
-    solar_atlas_folder_path = download_global_solar_atlas(country_name=country_name_solar_atlas, data_path=data_path, measure = solar_atlas_measure)
-    solar_raster_filePath = os.path.join(wind_solar_atlas_folder, solar_atlas_folder_path, 'PVOUT.tif')
+    solar_atlas_folder_path = os.path.join(wind_solar_atlas_folder, f'{country_name_solar_atlas}_solar_atlas')
+
+    if not os.path.exists(solar_atlas_folder_path):
+        print('processing global solar atlas')
+        solar_atlas_measure = config['measure']  
+        solar_atlas_folder_name = download_global_solar_atlas(country_name=country_name_solar_atlas, data_path=data_path, measure = solar_atlas_measure)
+    else:
+        print(f"Global solar atlas data already downloaded: {solar_atlas_folder_path}")
+    
+    solar_raster_filePath = os.path.join(wind_solar_atlas_folder, solar_atlas_folder_path, os.listdir(solar_atlas_folder_path)[0], 'PVOUT.tif')
     #clip and reproject to local CRS (also saves file which is only clipped but not reprojected)
     clip_reproject_raster(solar_raster_filePath, region_name_clean, region, 'solar', EPSG, 'nearest', 'float32', output_dir)
     #co-register raster to land cover
