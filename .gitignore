@@ -42,4 +42,4 @@
 !other/color_raster_file.ipynb
 !other/resampling_reprojecting.ipynb
 !Exclusion.py
-!
+configs/config.yaml
