@@ -319,7 +319,7 @@ def co_register(infile, match, resampling_method, outfile, dtype): #source: http
             compress='DEFLATE') 
         
 
-        print("Coregistered to shape:", dst_height,dst_width,'\n Affine',dst_transform)
+        #print("Coregistered to shape:", dst_height,dst_width,'\n Affine',dst_transform)
         # open output
         with rasterio.open(outfile, "w", **dst_profile) as dst:
             # iterate through bands and write using reproject function
