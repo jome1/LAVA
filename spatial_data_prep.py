@@ -406,38 +406,45 @@ except Exception as e:
 #protected areas
 #download WDPA (WDPA is country specific, so the protected areas for a custom polygon spanning over multiple countries cannot be obtained)
 if consider_protected_areas == 'WDPA' or consider_protected_areas == 'file':
-    print('processing protected areas')
-    if consider_protected_areas == 'WDPA':    
-        logging.info('using WDPA')
-        if find_folder(protected_areas_folder, string_in_name=country_code) is None:
-            # if there is no folder already existing then create one and download the WDPA
-            WDPA_country_folder = os.path.join(protected_areas_folder, f'WDPA_{country_code}')
-            os.makedirs(WDPA_country_folder, exist_ok=True)
-            if country_code in wdpa_url: #check if provided URL matches with country of study region
-                #donwload and convert to geopackage
-                download_unpack_zip(wdpa_url, WDPA_country_folder)
-                gdb_folder = find_folder(WDPA_country_folder, file_ending='.gdb') #gdb means geodatabase
-                convert_gdb_to_gpkg(gdb_folder, WDPA_country_folder, f'{country_code}_WDPA.gpkg')
+
+    protected_areas_filePath = os.path.join(output_dir, f'protected_areas_{consider_protected_areas}_{region_name_clean}_{EPSG}.gpkg')
+    if not os.path.exists(protected_areas_filePath): #process data if file not exists in output folder
+
+        print('processing protected areas')
+        if consider_protected_areas == 'WDPA':    
+            logging.info('using WDPA')
+            if find_folder(protected_areas_folder, string_in_name=country_code) is None:
+                # if there is no folder already existing then create one and download the WDPA
+                WDPA_country_folder = os.path.join(protected_areas_folder, f'WDPA_{country_code}')
+                os.makedirs(WDPA_country_folder, exist_ok=True)
+                if country_code in wdpa_url: #check if provided URL matches with country of study region
+                    #donwload and convert to geopackage
+                    download_unpack_zip(wdpa_url, WDPA_country_folder)
+                    gdb_folder = find_folder(WDPA_country_folder, file_ending='.gdb') #gdb means geodatabase
+                    convert_gdb_to_gpkg(gdb_folder, WDPA_country_folder, f'{country_code}_WDPA.gpkg')
+                else:
+                    logging.warning('No WDPA downloaded. URL and country code do not match')
             else:
-                logging.warning('No WDPA downloaded. URL and country code do not match')
+                logging.info('folder with protected areas of country of study region already exists')
+                WDPA_country_folder = os.path.join(protected_areas_folder, f'WDPA_{country_code}')
+            
+            raw_protected_areas_filepath = os.path.join(WDPA_country_folder, f'{country_code}_WDPA.gpkg')
+
+        elif consider_protected_areas == 'file':
+            logging.info("using local file for protected areas")
+            protected_areas_filename=config['protected_areas_filename']
+            raw_protected_areas_filepath = os.path.join(protected_areas_folder, protected_areas_filename)
+
+        #clip to study region (WDPA or local file)
+        protected_areas_file = gpd.read_file(raw_protected_areas_filepath)
+        protected_areas_file = geopandas_clip_reproject(protected_areas_file, region, EPSG)
+        if not protected_areas_file.empty:
+            protected_areas_file.to_file(protected_areas_filePath, driver='GPKG', encoding='utf-8')
         else:
-            logging.info('folder with protected areas of country of study region already exists')
-            WDPA_country_folder = os.path.join(protected_areas_folder, f'WDPA_{country_code}')
-        
-        protected_areas_filepath = os.path.join(WDPA_country_folder, f'{country_code}_WDPA.gpkg')
-
-    elif consider_protected_areas == 'file':
-        logging.info("using local file for protected areas")
-        protected_areas_filename=config['protected_areas_filename']
-        protected_areas_filepath = os.path.join(protected_areas_folder, protected_areas_filename)
-
-    #clip to study region (WDPA or local file)
-    protected_areas_file = gpd.read_file(protected_areas_filepath)
-    protected_areas_file = geopandas_clip_reproject(protected_areas_file, region, EPSG)
-    if not protected_areas_file.empty:
-        protected_areas_file.to_file(os.path.join(output_dir, f'protected_areas_{region_name_clean}_{EPSG}.gpkg'), driver='GPKG', encoding='utf-8')
+            logging.info("No protected areas found in the region. File not saved.")
+    
     else:
-        logging.info("No protected areas found in the region. File not saved.")
+        print(f"Protected areas file already exists for region.")
 
 
 #global wind atlas
