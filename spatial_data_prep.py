@@ -60,7 +60,6 @@ wdpa_url = config['wdpa_url']
 #----------------------------
 ############### Define study region ############### use geopackage from gadm.org to inspect in QGIS
 region_folder_name = config['region_folder_name']
-region_name = config['region_name'] #always needed (if country is studied, then use country name)
 OSM_folder_name = config['OSM_folder_name'] #usually same as country_code, only needed if OSM is to be considered
 DEM_filename = config['DEM_filename']
 landcover_filename = config['landcover_filename']
@@ -290,7 +289,7 @@ if landcover_source == 'openeo':
         connection = openeo.connect(url="openeo.dataspace.copernicus.eu").authenticate_oidc()
 
         if custom_study_area_filename:
-            with open(custom_study_area_filepath, 'r') as file: #use region file in EPSG 4326 because openeo default file is in 4326
+            with open(custom_study_area_filepath, 'r', encoding="utf-8") as file: #use region file in EPSG 4326 because openeo default file is in 4326
                 aoi = json.load(file) #load polygon for clipping with openeo            
         else:
             with open(os.path.join(output_dir, f'{region_name_clean}_4326.geojson'), 'r') as file: #use region file in EPSG 4326 because openeo default file is in 4326
@@ -300,7 +299,7 @@ if landcover_source == 'openeo':
         #clip landcover directly to area of interest 
         masked_landcover = datacube_landcover.mask_polygon(aoi)
         #reproject landcover to EPSG 32633 and dont change resolution thereby
-        landcover = masked_landcover.resample_spatial(projection=EPSG, resolution=0) #resolution=0 does not change resolution
+        landcover = masked_landcover.resample_spatial(projection=EPSG, resolution=config['resolution_landcover']) #resolution=0 does not change resolution
         
         result = landcover.save_result('GTiFF')
         job_options = {
@@ -308,7 +307,7 @@ if landcover_source == 'openeo':
             "executor-memory": "5G", #set executer-memory higher to process larger regions; see https://forum.dataspace.copernicus.eu/t/batch-process-error-when-using-certain-region/1454 
             } #see also https://discuss.eodc.eu/t/memory-overhead-problem/424
         # Creating a new batch job at the back-end by sending the datacube information.
-        job = result.create_job(job_options=job_options, title=f'landcover_{region_name_clean}_{EPSG}')
+        job = result.create_job(job_options=job_options, title=f'landcover_openeo_{region_name_clean}_{EPSG}')
         # Starts the job and waits until it finished to download the result.
         job.start_and_wait()
         job.get_results().download_file(output_path) 
@@ -336,7 +335,7 @@ if landcover_source == 'openeo':
     elif os.path.exists(output_path):
         logging.info('Landcover not downloaded from openeo. There is already a clipped landcover file in the output folder.')
 
-
+    processed_landcover_filePath = output_path
 
 if landcover_source == 'file':
     print('processing landcover')
@@ -348,19 +347,18 @@ if landcover_source == 'file':
         landcover_information(local_landcover_filePath, output_dir, region_name, EPSG)
     else:
         print(f"Local landcover already processed to region.")
-
+    
+    processed_landcover_filePath = local_landcover_filePath
 
 
 print('processing DEM') #block comment: SHIFT+ALT+A, multiple line comment: STRG+#
 try:
     clip_reproject_raster(demRasterPath, region_name_clean, region, 'DEM', EPSG, 'nearest', 'int16', output_dir)
     dem_4326_Path = os.path.join(output_dir, f'DEM_{region_name_clean}_EPSG4326.tif')
-
     #reproject and match resolution of DEM to landcover data (co-registration)
     dem_localCRS_Path=os.path.join(output_dir, f'DEM_{region_name_clean}_EPSG{EPSG}.tif')
-    matchPath=os.path.join(output_dir, f'landcover_{region_name_clean}_EPSG{EPSG}.tif')
     dem_resampled_Path=os.path.join(output_dir, f'DEM_{region_name_clean}_EPSG{EPSG}_resampled.tif') 
-    co_register(dem_localCRS_Path, matchPath, 'nearest', dem_resampled_Path, dtype='int16')
+    co_register(dem_localCRS_Path, processed_landcover_filePath, 'nearest', dem_resampled_Path, dtype='int16')
 
     #slope and aspect map
     # Define output directories
@@ -374,7 +372,7 @@ try:
     slopeFilePathLocalCRS = os.path.join(richdem_helper_dir, f'slope_{region_name_clean}_EPSG{EPSG}.tif')
     save_richdem_file(slope, dem_localCRS_Path, slopeFilePathLocalCRS)
     slope_co_registered_FilePath = os.path.join(richdem_helper_dir, f'slope_{region_name_clean}_EPSG{EPSG}_resampled.tif')
-    co_register(slopeFilePathLocalCRS, matchPath, 'nearest', slope_co_registered_FilePath, dtype='int16')
+    co_register(slopeFilePathLocalCRS, processed_landcover_filePath, 'nearest', slope_co_registered_FilePath, dtype='int16')
     #save in 4326: slope cannot be calculated from EPSG4326 because units get confused (https://github.com/r-barnes/richdem/issues/34)
     slopeFilePath4326 = os.path.join(richdem_helper_dir, f'slope_{region_name_clean}_EPSG4326.tif')
     reproject_raster(slopeFilePathLocalCRS, region_name_clean, 4326, 'nearest', slopeFilePath4326)
@@ -386,7 +384,7 @@ try:
     aspectFilePathLocalCRS = os.path.join(richdem_helper_dir, f'aspect_{region_name_clean}_EPSG{EPSG}.tif')
     save_richdem_file(aspect, dem_localCRS_Path, aspectFilePathLocalCRS)
     aspect_co_registered_FilePath = os.path.join(richdem_helper_dir, f'aspect_{region_name_clean}_EPSG{EPSG}_resampled.tif')
-    co_register(aspectFilePathLocalCRS, matchPath, 'nearest', aspect_co_registered_FilePath, dtype='int16')
+    co_register(aspectFilePathLocalCRS, processed_landcover_filePath, 'nearest', aspect_co_registered_FilePath, dtype='int16')
     #save in 4326: not sure if aspect is calculated correctly in EPSG4326 because units might get confused (https://github.com/r-barnes/richdem/issues/34)
     aspectFilePath4326 = os.path.join(richdem_helper_dir, f'aspect_{region_name_clean}_EPSG4326.tif')
     reproject_raster(aspectFilePathLocalCRS, region_name_clean, 4326, 'nearest', aspectFilePath4326)
@@ -461,9 +459,8 @@ if consider_wind_atlas == 1:
     clip_reproject_raster(wind_raster_filePath, region_name_clean, region, 'wind', EPSG, 'nearest', 'float32', output_dir)
     #co-register raster to land cover
     wind_raster_clipped_reprojected_filePath = os.path.join(output_dir, f'wind_{region_name_clean}_EPSG{EPSG}.tif')
-    matchPath=os.path.join(output_dir, f'landcover_{region_name_clean}_EPSG{EPSG}.tif')
     wind_raster_co_registered_filePath = os.path.join(output_dir, f'wind_{region_name_clean}_EPSG{EPSG}_resampled.tif')
-    co_register(wind_raster_clipped_reprojected_filePath, matchPath, 'nearest', wind_raster_co_registered_filePath, dtype='float32')
+    co_register(wind_raster_clipped_reprojected_filePath, processed_landcover_filePath, 'nearest', wind_raster_co_registered_filePath, dtype='float32')
 
 
 
@@ -484,9 +481,8 @@ if consider_solar_atlas == 1:
     clip_reproject_raster(solar_raster_filePath, region_name_clean, region, 'solar', EPSG, 'nearest', 'float32', output_dir)
     #co-register raster to land cover
     solar_raster_clipped_reprojected_filePath = os.path.join(output_dir, f'solar_{region_name_clean}_EPSG{EPSG}.tif')
-    matchPath=os.path.join(output_dir, f'landcover_{region_name_clean}_EPSG{EPSG}.tif')
     solar_raster_co_registered_filePath = os.path.join(output_dir, f'solar_{region_name_clean}_EPSG{EPSG}_resampled.tif')
-    co_register(solar_raster_clipped_reprojected_filePath, matchPath, 'nearest', solar_raster_co_registered_filePath, dtype='float32')
+    co_register(solar_raster_clipped_reprojected_filePath, processed_landcover_filePath, 'nearest', solar_raster_co_registered_filePath, dtype='float32')
 
 
 
