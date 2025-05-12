@@ -60,13 +60,12 @@ wdpa_url = config['wdpa_url']
 #----------------------------
 ############### Define study region ############### use geopackage from gadm.org to inspect in QGIS
 region_folder_name = config['region_folder_name']
-region_name = config['region_name'] #always needed (if country is studied, then use country name)
 OSM_folder_name = config['OSM_folder_name'] #usually same as country_code, only needed if OSM is to be considered
 DEM_filename = config['DEM_filename']
 landcover_filename = config['landcover_filename']
 
 #use GADM boundary
-#region_name = config['region_name'] #if country is studied, then use country name
+region_name = config['region_name'] #if country is studied, then use country name
 country_code = config['country_code']  #3-digit ISO code  #PRT  #Städteregion Aachen in level 2 #Porto in level 1 #Elbe-Elster in level 2 #Zell am See in level 2
 gadm_level = config['gadm_level']
 #or use custom region
@@ -290,7 +289,7 @@ if landcover_source == 'openeo':
         connection = openeo.connect(url="openeo.dataspace.copernicus.eu").authenticate_oidc()
 
         if custom_study_area_filename:
-            with open(custom_study_area_filepath, 'r',encoding="utf-8") as file: #use region file in EPSG 4326 because openeo default file is in 4326
+            with open(custom_study_area_filepath, 'r', encoding="utf-8") as file: #use region file in EPSG 4326 because openeo default file is in 4326
                 aoi = json.load(file) #load polygon for clipping with openeo            
         else:
             with open(os.path.join(output_dir, f'{region_name_clean}_4326.geojson'), 'r') as file: #use region file in EPSG 4326 because openeo default file is in 4326
@@ -300,7 +299,7 @@ if landcover_source == 'openeo':
         #clip landcover directly to area of interest 
         masked_landcover = datacube_landcover.mask_polygon(aoi)
         #reproject landcover to EPSG 32633 and dont change resolution thereby
-        landcover = masked_landcover.resample_spatial(projection=EPSG, resolution=1000) #resolution=0 does not change resolution
+        landcover = masked_landcover.resample_spatial(projection=EPSG, resolution=config['resolution_landcover']) #resolution=0 does not change resolution
         
         result = landcover.save_result('GTiFF')
         job_options = {
