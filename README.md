@@ -1,23 +1,3 @@
-```
-.
-└── Edit me to generate/
-    ├── 📁 a/
-    │   └── nice/
-    │       └── tree/
-    │           ├── diagram!
-    │           └── :)
-    └── Use indentation/
-        ├── to indicate/
-        │   ├── file
-        │   ├── and
-        │   ├── folder
-        │   └── nesting.
-        └── You can even/
-            └── use/
-                ├── markdown
-                └── bullets!
-```
-
 # LAVA - *LA*nd a*VA*ilability for Renewable Energies
 
 LAVA is a tool to calculate the available area in a user defined study region for building renewable energy generators like utility-scale solar PV and wind onshore.
