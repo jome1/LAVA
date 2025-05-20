@@ -130,7 +130,43 @@ The script `create_qgis_project.py` puts all files together into a QGIS project 
 `conda install -c conda-forge qgis=VERSIONNUMBER`
 
 
-## 7. More info / notes
+## 8. Folder structure
+edit [here](https://tree.nathanfriend.com/?s=(%27opt3s!(%27fancy5~fullPath!false~trailingS9sh5~rootDot5)~8(%278%27LAVA-configs-envs-other-utils-Raw_SpatiBData-.4custom_studyC4DEM4globBso9r_wind_at9s4GOAS464OSM42-data4reg3_name0Freg70so9r0wind02060EPSG09nduses0pixel_size0OSM_files0derived_from_F*slope0*aspect4.%2F0%27)~vers3!%271%27)*%20%20-%5Cn*.*addit3Bexclus7s04*2protectedCs3ion4-*5!true69ndcover73_polygon8source!9laBal_C_areaFDEM0%01FCB987654320.-*)
+
+LAVA/
+├── 📁 configs
+├── 📁 envs
+├── 📁 other
+├── 📁 utils
+├── 📁 Raw_Spatial_Data/
+│   ├── 📁 additional_exclusion_polygons
+│   ├── 📁 custom_study_area
+│   ├── 📁 DEM
+│   ├── 📁 global_solar_wind_atlas
+│   ├── 📁 GOAS
+│   ├── 📁 landcover
+│   ├── 📁 OSM
+│   └── 📁 protected_areas
+└── 📁 data/
+    └── 📁 ***region_name***/
+        ├── *DEM*
+        ├── *region_polygon*
+        ├── *solar*
+        ├── *wind*
+        ├── *protected_areas*
+        ├── *landcover*
+        ├── *EPSG*
+        ├── *landuses*
+        ├── *pixel_size*
+        ├── *OSM_files*
+        ├── 📁 derived_from_DEM/
+        │   ├── *slope*
+        │   └── *aspect*
+        └── 📁 additional_exclusion_polygons/
+
+        
+
+## 9. More info / notes
 * Terrascope API: not implemented because of limited functionalities (e.g. only downloads tiles, data cannot be clipped to area of interest). [API documentation](https://vitobelgium.github.io/terracatalogueclient/api.html), [ESAworldvcover Product](https://docs.terrascope.be/#/DataProducts/WorldCover/WorldCover),
 
 * [adding basemaps to QGIS](https://gis.stackexchange.com/questions/20191/adding-basemaps-in-qgis)
