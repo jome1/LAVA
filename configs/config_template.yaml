@@ -10,7 +10,9 @@ consider_wind_atlas: 1
 consider_solar_atlas: 1
 country_name_solar_atlas: Germany # name of country or "world" if you want to download the whole world 
 
-consider_additional_exclusion_polygons: '' #empty string or name of folder within "Raw_Spatial_Data\additional_exclusion_polygons\"
+additional_exclusion_polygons_folder_name: '' #empty string or name of folder within "Raw_Spatial_Data\additional_exclusion_polygons\"
+
+additional_exclusion_rasters_folder_name: ''
 
 consider_protected_areas: WDPA #WDPA or file or 0
 wdpa_url: 'https://d1gam3xoknrgr2.cloudfront.net/current/WDPA_WDOECM_Mar2025_Public_DEU.zip'

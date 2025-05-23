@@ -84,7 +84,9 @@ with open(os.path.join(data_path, f'landuses_{region_name}.json'), 'r') as fp:
     landuses = json.load(fp)
 
 #load pixel size
-if not EPSG==4326:
+if config['resolution_manual'] is not None:
+    res = config['resolution_manual']
+elif not EPSG==4326:
     with open(os.path.join(data_path, f'pixel_size_{region_name}_{EPSG}.json'), 'r') as fp:
         res = json.load(fp)
 else:

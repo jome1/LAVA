@@ -53,6 +53,7 @@ consider_military = config['consider_military']
 consider_wind_atlas = config['consider_wind_atlas']
 consider_solar_atlas = config['consider_solar_atlas']  
 consider_additional_exclusion_polygons = config['additional_exclusion_polygons_folder_name']
+consider_additional_exclusion_rasters = config['additional_exclusion_rasters_folder_name']
 EPSG_manual = config['EPSG_manual']  #if None use empty string
 consider_protected_areas = config['consider_protected_areas']
 wdpa_url = config['wdpa_url']
@@ -277,6 +278,22 @@ if consider_additional_exclusion_polygons:
             if not gdf_clipped_reprojected.empty:
                 gdf_clipped_reprojected.to_file(os.path.join(add_excl_polygons_dir, f'{counter}_{filename_base}_{region_name_clean}_{EPSG}.gpkg'), driver='GPKG')
                 counter = counter + 1
+
+#clip and reproject additional rasters
+if consider_additional_exclusion_rasters:
+    print('processing additional exclusion rasters')
+    # Define output directory for additional exclusion rasters
+    add_excl_rasters_dir = os.path.join(output_dir,'additional_exclusion_rasters')
+    os.makedirs(add_excl_rasters_dir, exist_ok=True)
+    source_dir = os.path.join(data_path, 'additional_exclusion_rasters', config['additional_exclusion_rasters_folder_name'])
+    counter = 1
+    # Loop through all files in the directory
+    for filename in os.listdir(source_dir):
+        filepath = os.path.join(source_dir, filename)    # Construct the full file path
+        # Check if the file is either a GeoJSON or GeoPackage
+        if filename.endswith(".tif"):
+            clip_reproject_raster(filepath, region_name_clean, region, f'{counter}', EPSG, 'nearest', 'float64', add_excl_rasters_dir)
+            counter = counter + 1
 
 
 
