@@ -19,7 +19,7 @@ wdpa_url: 'https://d1gam3xoknrgr2.cloudfront.net/current/WDPA_WDOECM_Mar2025_Pub
 protected_areas_filename: '' #include file ending (.gpkg or .geojson), needs to be in EPSG4326
 
 
-EPSG_manual: ''  #if None use empty string
+CRS_manual: ''  #if None use empty string
 
 
 #name folders and files
