@@ -24,6 +24,7 @@ import pygadm
 import openeo
 import richdem
 from utils.data_preprocessing import *
+from utils.local_OSM_shp_files import *
 import logging
 from pyproj import CRS
 
@@ -87,7 +88,7 @@ coastlinesFilePath = os.path.join(data_path, 'GOAS', 'goas.gpkg')
 protected_areas_folder = os.path.join(data_path, 'protected_areas')
 wind_solar_atlas_folder = os.path.join(data_path, 'global_solar_wind_atlas')
 if consider_railways == 1 or consider_roads == 1 or consider_airports == 1 or consider_waterbodies == 1:
-    OSM_country_path = os.path.join(data_path, 'OSM', OSM_folder_name) 
+    OSM_data_path = os.path.join(data_path, 'OSM', OSM_folder_name) 
 
 
 # Get region name without accents, spaces, apostrophes, or periods for saving files
@@ -194,86 +195,9 @@ if consider_coastlines == 1:
 region.to_crs(global_crs_obj, inplace=True) 
 
 
-if consider_railways == 1:
-    OSM_railways_filePath = os.path.join(output_dir, f'OSM_railways_{region_name_clean}_{global_crs_tag}.gpkg')
-    if not os.path.exists(OSM_railways_filePath): #process data if file not exists in output folder
-        print('processing railways')
-        OSM_file = gpd.read_file(os.path.join(OSM_country_path, f'gis_osm_railways_free_1.shp'))
-        OSM_railways = gpd.clip(OSM_file, region)
-        #OSM_railways = geopandas_clip_reproject(OSM_file, region, global_crs_tag)
-        # Check if OSM_airports is not empty before saving
-        if not OSM_railways.empty:
-            OSM_railways.to_file(OSM_railways_filePath, driver='GPKG', encoding='utf-8')
-        else:
-            logging.info("No railways found in the region. File not saved.")
-    else:
-        print(f"OSM railways data already exists for region")
-
-if consider_roads == 1:
-    OSM_roads_filePath = os.path.join(output_dir, f'OSM_roads_{region_name_clean}_{global_crs_tag}.gpkg')
-    if not os.path.exists(OSM_roads_filePath): #process data if file not exists in output folder
-        print('processing roads')
-        OSM_file = gpd.read_file(os.path.join(OSM_country_path, f'gis_osm_roads_free_1.shp'))
-        OSM_roads = gpd.clip(OSM_file, region)
-        #OSM_roads = geopandas_clip_reproject(OSM_file, region, EPSG)
-        # filter roads. see https://www.geofabrik.de/data/geofabrik-osm-gis-standard-0.7.pdf page19
-        OSM_roads_filtered = OSM_roads[OSM_roads['code'].isin([5111, 5112, 5113, 5114, 5115, 5121, 5131, 5132, 5133, 5134, 5135])]
-        #OSM_roads_filtered = OSM_roads_clipped[~OSM_roads_clipped['code'].isin([5141])] #keep all roads except with code listed (eg 5141)
-        # reset index for clean, zero-based index of filtered data
-        OSM_roads_filtered.reset_index(drop=True, inplace=True) 
-        # save file
-        OSM_roads_filtered.to_file(OSM_roads_filePath, driver='GPKG', encoding='utf-8')
-    else:
-        print(f"OSM roads data already exists for region")
-
-if consider_airports == 1:
-    OSM_airports_filePath = os.path.join(output_dir, f'OSM_airports_{region_name_clean}_{global_crs_tag}.gpkg')
-    if not os.path.exists(OSM_airports_filePath): #process data if file not exists in output folder
-        print('processing airports')
-        OSM_file = gpd.read_file(os.path.join(OSM_country_path, f'gis_osm_transport_a_free_1.shp'))
-        OSM_transport = gpd.clip(OSM_file, region) #all transport fclasses from the OSM file 
-        #OSM_transport = geopandas_clip_reproject(OSM_file, region, EPSG) #all transport fclasses from the OSM file 
-        OSM_airports = OSM_transport[OSM_transport['code'].isin([5651, 5652])] #5651: large airport, 5652: small airport or airfield
-        # Check if OSM_airports is not empty before saving
-        if not OSM_airports.empty:
-            OSM_airports.to_file(OSM_airports_filePath, driver='GPKG', encoding='utf-8')
-        else:
-            logging.info("No airports found in the region. File not saved.")
-    else:
-        print(f"OSM airports data already exists for region")
-
-if consider_waterbodies == 1:
-    OSM_waterbodies_filePath = os.path.join(output_dir, f'OSM_waterbodies_{region_name_clean}_{global_crs_tag}.gpkg')
-    if not os.path.exists(OSM_waterbodies_filePath): #process data if file not exists in output folder
-        print('processing waterbodies')
-        OSM_file = gpd.read_file(os.path.join(OSM_country_path, f'gis_osm_water_a_free_1.shp'))
-        OSM_waterbodies = gpd.clip(OSM_file, region) #all water fclasses from the OSM file 
-        #OSM_waterbodies = geopandas_clip_reproject(OSM_file, region, EPSG) #all water fclasses from the OSM file 
-        OSM_waterbodies_filtered = OSM_waterbodies[OSM_waterbodies['code'].isin([8200, 8201, 8202])] #8200: unspecified waterbodies like lakes, 8201: reservoir, 8202: river
-        # Check if OSM_waterbodies_filtered is not empty before saving
-        if not OSM_waterbodies_filtered.empty:
-            OSM_waterbodies_filtered.to_file(OSM_waterbodies_filePath, driver='GPKG', encoding='utf-8')
-        else:
-            logging.info("No waterbodies found in the region. File not saved.")
-    else:
-        print(f"OSM waterbodies data already exists for region")
-
-
-if consider_military == 1:
-    OSM_military_filePath = os.path.join(output_dir, f'OSM_military_{region_name_clean}_{global_crs_tag}.gpkg')
-    if not os.path.exists(OSM_military_filePath): #process data if file not exists in output folder
-        print('processing military areas')
-        OSM_file = gpd.read_file(os.path.join(OSM_country_path, f'gis_osm_landuse_a_free_1.shp'))
-        OSM_landuses_clipped = gpd.clip(OSM_file, region) #all landuses fclasses from the OSM file 
-        #OSM_landuses_clipped = geopandas_clip_reproject(OSM_file, region, EPSG) #all landuses fclasses from the OSM file 
-        OSM_military = OSM_landuses_clipped[OSM_landuses_clipped['code'].isin([7213])] #7213: military
-        # Check if OSM_military is not empty before saving
-        if not OSM_military.empty:
-            OSM_military.to_file(OSM_military_filePath, driver='GPKG', encoding='utf-8')
-        else:
-            logging.info("No military areas found in the region. File not saved.")
-    else:
-        print(f"OSM military data already exists for region")
+# OSM data
+if config['OSM_source'] == 'geofabrik':
+    process_all_local_osm_layer(config, region, region_name_clean, output_dir, OSM_data_path, target_crs=None)
 
 
 #clip and reproject additional exclusion polygons
