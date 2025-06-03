@@ -1,5 +1,6 @@
 import json
 import os
+import geopandas as gpd
 from shapely.geometry import shape, Polygon, MultiPolygon, mapping
 from shapely.ops import unary_union
 
@@ -12,24 +13,19 @@ TARGET_VERTICES = 360
 TOL_MIN, TOL_MAX = 0.0, 0.5  # Search range for simplification tolerance
 
 
-'''This function should be linked with the output from the GADM API, instead of reading the file.'''
-def prepare_geometry(input_shape, load_from_file=False, input_fp=None):
-    if load_from_file:
-        if input_fp is None:
-            raise ValueError("input_fp must be provided when load_from_file is True")
-        with open(input_fp, 'r', encoding='utf-8') as f:
-            data = json.load(f)
-    else:
-        data= input_shape
 
-    geom = shape(data['features'][0]['geometry'])
+def prepare_geometry(geom):
+    """Ensure geometry is a single Polygon suitable for simplification."""
     if isinstance(geom, MultiPolygon):
         merged = unary_union(geom)
         if isinstance(merged, Polygon):
-            geom = merged
+            return merged
         else:
-            geom = max(merged.geoms, key=lambda p: p.area)
-    return geom
+            return max(merged.geoms, key=lambda p: p.area)
+    elif isinstance(geom, Polygon):
+        return geom
+    else:
+        raise ValueError("Input must be a Polygon or MultiPolygon.")
 
 
 
@@ -66,8 +62,6 @@ def simplify(geom, tol, output_path= None, export_json=False):
             json.dump(fc, f, ensure_ascii=False, indent=2)
     return simplified
 
-
-
 def export_overpass_polygon(poly):
     polygon_coords = poly.exterior.coords
     poly_str = " ".join(f"{lat} {lon}" for lon, lat in polygon_coords)
@@ -76,15 +70,11 @@ def export_overpass_polygon(poly):
     return poly_str
 
 
-def main():
-    geom = prepare_geometry(input_shape, load_from_file=True, input_fp=INPUT_FP)
-    tol, count = find_tolerance_for_vertices(geom, TARGET_VERTICES, TOL_MIN, TOL_MAX)
-    simplified = simplify(geom, tol)
-    export_overpass_polygon(simplified,)
-    print(f"Wrote simplified geometry to {OUTPUT_FP}")
-    print(f"Wrote simplified coordinates to {COORDS_OUTPUT_FP}")
-    print(f"Wrote Overpass query to {QUERY_OUTPUT_FP}")
+def generate_overpass_polygon(region_gdf: gpd.GeoDataFrame, target_vertices=360, tol_min=0.0, tol_max=0.5) -> str:
+    """Simplify a region and return an Overpass-compatible polygon string."""
+    raw_geom = region_gdf.unary_union
+    geom = prepare_geometry(raw_geom)
+    tol, count = find_tolerance_for_vertices(geom, target_vertices, tol_min, tol_max)
+    simplified_geom = simplify(geom, tol)
     print(f"Tolerance used: {tol:.6f}°, resulting vertices: {count}")
-
-if __name__ == "__main__":
-    main()
+    return export_overpass_polygon(simplified_geom)

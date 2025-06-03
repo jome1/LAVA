@@ -17,6 +17,12 @@ import geopandas as gpd
 from OSMPythonTools.nominatim import Nominatim
 from OSMPythonTools.overpass import overpassQueryBuilder, Overpass
 
+import logging
+from OSMPythonTools import logger as osm_logger
+
+# Only log ERROR or CRITICAL; ignore WARNING and below
+osm_logger.setLevel(logging.ERROR)
+
 def osm_to_gpkg(
     region_name: str,
     polygon: str,
@@ -51,18 +57,20 @@ def osm_to_gpkg(
     start_time = time.time()
     os.makedirs(output_dir, exist_ok=True)
 
+    
     nominatim = Nominatim()
     location = nominatim.query(region_name)
     if not location:
         print(f"Region '{region_name}' not found.")
         return {}
-
+    
     area_id = location.areaId()
-    print(f"Fetching data for: {location.displayName()} (Area ID: {area_id})")
-
+    print(f"Fetching data for: {region_name} ")
+    #print(f"Fetching data for: {location.displayName()} (Area ID: {area_id})")
+    
     overpass = Overpass()
     query = overpassQueryBuilder(
-        polygon=polygon
+        polygon=polygon,
         elementType=[element_type],
         selector=selector,
         includeGeometry=True

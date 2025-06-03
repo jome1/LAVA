@@ -23,11 +23,12 @@ import rasterio
 import pygadm
 import openeo
 import richdem
-from utils.data_preprocessing import *
-from utils.local_OSM_shp_files import *
 import logging
 from pyproj import CRS
-
+from utils.data_preprocessing import *
+from utils.local_OSM_shp_files import *
+from utils.fetch_OSM import osm_to_gpkg
+from utils.simplify import generate_overpass_polygon
 
 # Record the starting time
 start_time = time.time()
@@ -194,6 +195,61 @@ region.to_crs(global_crs_obj, inplace=True)
 if config['OSM_source'] == 'geofabrik':
     process_all_local_osm_layer(config, region, region_name_clean, output_dir, OSM_data_path, target_crs=None)
 
+elif config['OSM_source'] == 'overpass':
+     #download OSM data from overpass API
+    # Define OSM features to fetch
+    # Load all possible OSM features directly from config
+    osm_features_config = config.get("osm_features_config", {})
+
+    #Use the GDAM polygon to fetch OSM data, first simplify the polygon to avoid too many vertices
+    polygon = generate_overpass_polygon(region)
+
+    # Filter based on config flags
+    selected_osm_features_dict = {
+        key: val for key, val in osm_features_config.items()
+        if config.get(f"{key}", 0)}
+    
+    # Define output base directory and prepare unsupported log
+    OSM_output_path = os.path.join(output_dir, "OSM_Infrastructure")
+    unsupported_summary = {}
+    unsupported_geometries_summary_path = os.path.join(OSM_output_path, "unsupported_geometries_summary.json")
+
+    # Loop through regions and features
+    for feature_key in selected_osm_features_dict:
+
+        # skip if we’ve already got this GeoPackage
+        gpkg_path = os.path.join(OSM_output_path, f"{feature_key}.gpkg")
+        
+        if os.path.exists(gpkg_path):
+            print(f"⏭️  Skipping '{feature_key}' for {region_name_clean}: '{gpkg_path}' already exists.")
+
+        else:
+            print(f"\n🔍 Processing {feature_key} in {region_name_clean}")
+            #the function returns a dictionary with unsupported geometries to check if the features dictionary is correct
+            unsupported = osm_to_gpkg(
+                region_name=region_name_clean,
+                polygon=polygon,
+                feature_key=feature_key,
+                features_dict=selected_osm_features_dict,
+                EPSG=EPSG,
+                # Optional override for geometry types per feature::
+                # relevant_geometries_override={"substation": ["node"]},
+                output_dir=OSM_output_path
+            )
+
+            # Save unsupported counts if any were found
+            if unsupported:         
+                unsupported_summary[f"{region_name_clean}_{feature_key}"] = unsupported
+
+        # Save summary of unsupported geometries to JSON file
+        # the unsupported_summary dictionary contains the counts of unsupported geometries for each feature. 
+        # Unsupportd geometries are geometries not expected for the feature, e.g. a "node" for a transmission line. 
+        # Usually there are few unsupported geometries. 
+        
+        with open(unsupported_geometries_summary_path, "w", encoding="utf-8") as f:
+            json.dump(unsupported_summary, f, indent=2, ensure_ascii=False)
+
+        print(f"\nUnsupported geometry summary saved to {OSM_output_path}")
 
 #clip and reproject additional exclusion polygons
 if consider_additional_exclusion_polygons:
