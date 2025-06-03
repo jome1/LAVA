@@ -59,6 +59,9 @@ custom_study_area_filename: '' #if None use empty string
 # scenario name (written in available area filename)
 scenario: 'ref'
 
+# resolution manual
+resolution_manual: null
+
 #landcover codes (buffer in meters) (here landcover codes for openeo as default example)
 landcover_without_buffer: [50] #list of landcover codes
 landcover_with_buffer: #dictionary of landcover code with corresponding buffer in meters
