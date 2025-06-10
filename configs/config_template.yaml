@@ -104,6 +104,13 @@ min_pixels_y: 5
 # solar data
 measure: LTAym_YearlyMonthlyTotals
 
+force_osm_download: 1 #if set to 1, OSM data will be downloaded even if it is already present in the folder
+
+# shape simplification for OSM
+target_vertices:  360
+tolerance_min: 0.0  # Minimum simplification tolerance
+tolerance_max: 0.5  # Maximum simplification tolerance, 
+
 # OSM feature classes (fclass names need to be in a list!)
 fclass: 
   railways: null # null means nothing is filtered
@@ -126,7 +133,7 @@ osm_features_config:
   military: ["landuse", "military", "way"]
 
 # landcover data
-resolution_landcover: null # in degress, since EPSG4326; 0.008999280057498208 degrees is ca. 1000m at equator
+resolution_landcover: 0.008999280057498208 # in degress, since EPSG4326; 0.008999280057498208 degrees is ca. 1000m at equator
 
 # north facing pixels to be excluded (pixels with slope bigger X and aspect between Y and Z)
 north_facing_pixels: null

@@ -28,8 +28,8 @@ def osm_to_gpkg(
     polygon: str,
     feature_key: str,
     features_dict: dict,
-    EPSG: int = 4326,
     output_dir: str = "OSM_Infrastructure",
+    EPSG: Optional[int] = 4326,
     timeout: Optional[int] = 200,
     relevant_geometries_override: Optional[dict] = None,
 ):
@@ -52,7 +52,18 @@ def osm_to_gpkg(
         raise ValueError(f"'{feature_key}' not found in features_dict.")
 
     category, category_element, element_type = features_dict[feature_key]
-    selector = [f'"{category}"="{category_element}"']
+
+    if category_element is None or category_element == "":
+    # just require the key to exist
+        selector = [f'"{category}"']
+    elif isinstance(category_element, (list, tuple)):
+    # build a regex that matches any of the values in the list
+    # e.g. ["primary", "secondary"] → ^(primary|secondary)$
+        joined = "|".join(category_element)
+        selector = [f'"{category}"~"^({joined})$"']
+    else:
+    # single value → exact match
+        selector = [f'"{category}"="{category_element}"']
 
     start_time = time.time()
     os.makedirs(output_dir, exist_ok=True)
@@ -65,7 +76,7 @@ def osm_to_gpkg(
         return {}
     
     area_id = location.areaId()
-    print(f"Fetching data for: {region_name} ")
+    #print(f"Fetching data for: {region_name} ")
     #print(f"Fetching data for: {location.displayName()} (Area ID: {area_id})")
     
     overpass = Overpass()

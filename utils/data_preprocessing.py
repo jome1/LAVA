@@ -525,3 +525,16 @@ def clean_region_name(region_name: str) -> str:
     region_name_clean = region_name_clean.replace("'", "")
     region_name_clean = region_name_clean.replace("_", "")
     return region_name_clean
+
+
+def rel_path(path: str) -> str:
+    """
+    Returns a relative path from a given path.
+
+    Parameters:
+        path (str): The global path.
+
+    Returns:
+        str: The relative path
+    """
+    return os.path.relpath(path)

@@ -4,14 +4,6 @@ import geopandas as gpd
 from shapely.geometry import shape, Polygon, MultiPolygon, mapping
 from shapely.ops import unary_union
 
-# --- Configuration ---
-INPUT_FP = "data/NeiMongol/NeiMongol_4326.geojson"  # Path to your GADM JSON
-OUTPUT_FP = "NeiMongol_simplified_360.geojson"
-COORDS_OUTPUT_FP = "NeiMongol_simplified_360_coords.geojson"
-QUERY_OUTPUT_FP = "NeiMongol_overpass_query.txt"
-TARGET_VERTICES = 360
-TOL_MIN, TOL_MAX = 0.0, 0.5  # Search range for simplification tolerance
-
 
 
 def prepare_geometry(geom):
@@ -76,5 +68,5 @@ def generate_overpass_polygon(region_gdf: gpd.GeoDataFrame, target_vertices=360,
     geom = prepare_geometry(raw_geom)
     tol, count = find_tolerance_for_vertices(geom, target_vertices, tol_min, tol_max)
     simplified_geom = simplify(geom, tol)
-    print(f"Tolerance used: {tol:.6f}°, resulting vertices: {count}")
+    print(f"shape simplified for overpass query-> Tolerance used: {tol:.6f}°, resulting vertices: {count}")
     return export_overpass_polygon(simplified_geom)

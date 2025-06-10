@@ -46,3 +46,4 @@
 !other/resampling_reprojecting.ipynb
 !snakefile_wind
 !utils/simplify.py
+!utils/extact_china_provinces.py

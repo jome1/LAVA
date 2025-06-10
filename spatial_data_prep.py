@@ -196,11 +196,14 @@ if config['OSM_source'] == 'geofabrik':
     process_all_local_osm_layer(config, region, region_name_clean, output_dir, OSM_data_path, target_crs=None)
 
 elif config['OSM_source'] == 'overpass':
-     #download OSM data from overpass API
+
+    print('processing OSM data')
+
     # Define OSM features to fetch
     # Load all possible OSM features directly from config
     osm_features_config = config.get("osm_features_config", {})
-
+    
+    print('Prepare polygon for overpass query')
     #Use the GDAM polygon to fetch OSM data, first simplify the polygon to avoid too many vertices
     polygon = generate_overpass_polygon(region)
 
@@ -219,9 +222,9 @@ elif config['OSM_source'] == 'overpass':
 
         # skip if we’ve already got this GeoPackage
         gpkg_path = os.path.join(OSM_output_path, f"{feature_key}.gpkg")
-        
-        if os.path.exists(gpkg_path):
-            print(f"⏭️  Skipping '{feature_key}' for {region_name_clean}: '{gpkg_path}' already exists.")
+
+        if os.path.exists(gpkg_path) and not config['force_osm_download']:
+            print(f"⏭️  Skipping '{feature_key}' for {region_name_clean}: '{rel_path(gpkg_path)}' already exists.")
 
         else:
             print(f"\n🔍 Processing {feature_key} in {region_name_clean}")
@@ -248,7 +251,7 @@ elif config['OSM_source'] == 'overpass':
         with open(unsupported_geometries_summary_path, "w", encoding="utf-8") as f:
             json.dump(unsupported_summary, f, indent=2, ensure_ascii=False)
 
-        print(f"\nUnsupported geometry summary saved to {OSM_output_path}")
+    print(f"\nUnsupported geometry summary saved to {rel_path(OSM_output_path)}")
 
 #clip and reproject additional exclusion polygons
 if consider_additional_exclusion_polygons:
@@ -473,7 +476,7 @@ if consider_wind_atlas == 1:
         print('processing global wind atlas')
         download_global_wind_atlas(country_code=country_code, height=100, data_path=data_path) #global wind atlas apparently uses 3 letter ISO code
     else:
-        print(f"Global wind atlas data already downloaded: {wind_raster_filePath}")
+        print(f"Global wind atlas data already downloaded: {rel_path(wind_raster_filePath)}")
         
     #clip and reproject to local CRS (also saves file which is only clipped but not reprojected)
     clip_reproject_raster(wind_raster_filePath, region_name_clean, region, 'wind', local_crs_obj, 'nearest', 'float32', output_dir)
@@ -494,7 +497,7 @@ if consider_solar_atlas == 1:
         solar_atlas_measure = config['measure']  
         solar_atlas_folder_name = download_global_solar_atlas(country_name=country_name_solar_atlas, data_path=data_path, measure = solar_atlas_measure)
     else:
-        print(f"Global solar atlas data already downloaded: {solar_atlas_folder_path}")
+        print(f"Global solar atlas data already downloaded: {rel_path(solar_atlas_folder_path)}")
     
     solar_raster_filePath = os.path.join(wind_solar_atlas_folder, solar_atlas_folder_path, os.listdir(solar_atlas_folder_path)[0], 'PVOUT.tif')
     #clip and reproject to local CRS (also saves file which is only clipped but not reprojected)
