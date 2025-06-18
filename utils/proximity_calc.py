@@ -68,11 +68,19 @@ def generate_distance_raster(shapefile_path, region_path, output_path, pixel_siz
         conditional=raster_conditional
     )
 
-    print("Saving distance raster...")
+    print("Masking distance raster to region...")
     with rasterio.open(output_path) as src:
-        dist_data = src.read()
+        dist_data, dist_transform = mask(src, region_geometries, crop=True)
+        dist_meta = src.meta.copy()
 
-    with rasterio.open(output_path, 'w', **out_meta) as dest:
+    dist_meta.update({
+        "height": dist_data.shape[1],
+        "width": dist_data.shape[2],
+        "transform": dist_transform,
+        "nodata": no_data_value,
+    })
+
+    with rasterio.open(output_path, "w", **dist_meta) as dest:
         dest.write(dist_data)
 
     print("Distance raster generation complete.")
