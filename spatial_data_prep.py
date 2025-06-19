@@ -86,7 +86,8 @@ start_time = time.time()
 # Get paths to data files or folders
 dirname = os.path.dirname(__file__)
 data_path = os.path.join(dirname, 'Raw_Spatial_Data')
-landcoverRasterPath = os.path.join(data_path, 'landcover', landcover_filename)
+if landcover_source == 'file':
+    landcoverRasterPath = os.path.join(data_path, 'landcover', landcover_filename)
 demRasterPath = os.path.join(data_path, 'DEM', DEM_filename)
 coastlinesFilePath = os.path.join(data_path, 'GOAS', 'goas.gpkg')
 protected_areas_folder = os.path.join(data_path, 'protected_areas')
