@@ -269,11 +269,14 @@ if compute_substation_proximity:
             proximity_dir = os.path.join(output_dir, "proximity")
             os.makedirs(proximity_dir, exist_ok=True)
             proximity_out = os.path.join(proximity_dir, "substation_distance.tif")
-            generate_distance_raster(
-                shapefile_path=substations_path,
-                region_gdf=region,
-                output_path=proximity_out,
-            )
+            if os.path.exists(proximity_out):
+                print(f"Proximity raster already exists at {proximity_out}. Skipping generation.")
+            else:
+                generate_distance_raster(
+                    shapefile_path=substations_path,
+                    region_gdf=region,
+                    output_path=proximity_out,
+                )
         else:
             print("Proximity distance cannot be calculated as the substation is not provided.")
     else:
@@ -288,11 +291,14 @@ if compute_road_proximity:
             proximity_dir = os.path.join(output_dir, "proximity")
             os.makedirs(proximity_dir, exist_ok=True)
             proximity_out = os.path.join(proximity_dir, "road_distance.tif")
-            generate_distance_raster(
-                shapefile_path=roads_path,
-                region_gdf=region,
-                output_path=proximity_out,
-            )
+            if os.path.exists(proximity_out):
+                print(f"Proximity raster already exists at {proximity_out}. Skipping generation.")
+            else:
+                generate_distance_raster(
+                    shapefile_path=roads_path,
+                    region_gdf=region,
+                    output_path=proximity_out,
+                )
         else:
             print("Proximity distance cannot be calculated as the roads are not provided.")
     else:

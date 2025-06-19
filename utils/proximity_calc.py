@@ -38,8 +38,8 @@ def generate_distance_raster(shapefile_path, region_gdf, output_path, pixel_size
     Generate a proximity raster from vector data and clip it to a specified region.
 
     Parameters:
-        shapefile_path (str): Path to the input shapefile (.shp or .gpkg).
-        region_gdf (geopandas.GeoDataFrame): Region boundary provided in-memory.
+        shapefile_path (str): Path to the input vector file (e.g., a GeoPackage).
+        region_gdf (geopandas.GeoDataFrame): In-memory region boundary.
         output_path (str): Path to save the clipped output raster (.tif).
         pixel_size (float): Resolution of the output raster.
         no_data_value (int): NoData value to use in the raster.
