@@ -19,8 +19,8 @@ distance raster is clipped after calculation to match the region shape.
 
 import os
 import time
-import fiona
 from shapely.geometry import shape
+import geopandas as gpd
 import distancerasters as dr
 import rasterio
 from rasterio.mask import mask
@@ -33,13 +33,13 @@ def raster_conditional(rarray):
     """
     return (rarray == 1)
 
-def generate_distance_raster(shapefile_path, region_path, output_path, pixel_size=0.01, no_data_value=-9999):
+def generate_distance_raster(shapefile_path, region_gdf, output_path, pixel_size=0.01, no_data_value=-9999):
     """
     Generate a proximity raster from vector data and clip it to a specified region.
 
     Parameters:
-        shapefile_path (str): Path to the input shapefile (.shp).
-        region_path (str): Path to the region file (GeoJSON or similar).
+        shapefile_path (str): Path to the input shapefile (.shp or .gpkg).
+        region_gdf (geopandas.GeoDataFrame): Region boundary provided in-memory.
         output_path (str): Path to save the clipped output raster (.tif).
         pixel_size (float): Resolution of the output raster.
         no_data_value (int): NoData value to use in the raster.
@@ -48,26 +48,30 @@ def generate_distance_raster(shapefile_path, region_path, output_path, pixel_siz
     t0 = time.time()
 
     print("Loading input data...")
-    with fiona.open(shapefile_path, "r") as shp, fiona.open(region_path, "r") as region:
-        if shp.crs != region.crs:
-            raise ValueError(f"CRS mismatch: region CRS is {region.crs}, but shp CRS is {shp.crs}")
-        
-        region_bounds = region.bounds
-        region_geometries = [shape(feature['geometry']) for feature in region]
 
-        temp_raster_path = os.path.join(os.path.dirname(output_path), "temp_rasterized.tif")
+    shp_gdf = gpd.read_file(shapefile_path)
 
-        print("Rasterizing shapefile...")
-        t1 = time.time()
-        rv_array, affine = dr.rasterize(
-            shp,
-            pixel_size=pixel_size,
-            bounds=region_bounds,
-            fill=0,
-            nodata=no_data_value,
-            output=temp_raster_path
+    if shp_gdf.crs != region_gdf.crs:
+        raise ValueError(
+            f"CRS mismatch: region CRS is {region_gdf.crs}, but shp CRS is {shp_gdf.crs}"
         )
-        print(f"✔ Rasterization completed in {time.time() - t1:.2f} seconds")
+
+    region_bounds = region_gdf.total_bounds
+    region_geometries = [shape(geom) for geom in region_gdf.geometry]
+
+    temp_raster_path = os.path.join(os.path.dirname(output_path), "temp_rasterized.tif")
+
+    print("Rasterizing shapefile...")
+    t1 = time.time()
+    rv_array, affine = dr.rasterize(
+        shp_gdf,
+        pixel_size=pixel_size,
+        bounds=region_bounds,
+        fill=0,
+        nodata=no_data_value,
+        output=temp_raster_path,
+    )
+    print(f"✔ Rasterization completed in {time.time() - t1:.2f} seconds")
 
  
     print("Calculating distance raster...")
@@ -102,8 +106,11 @@ def generate_distance_raster(shapefile_path, region_path, output_path, pixel_siz
 
 # Example usage
 if __name__ == "__main__":
+    region_demo = gpd.read_file(
+        "Raw_Spatial_Data/custom_study_area/gadm41_CHN_1_NeiMongol.geojson"
+    )
     generate_distance_raster(
         shapefile_path="data/NeiMongol/OSM_Infrastructure/substations.gpkg",
-        region_path="Raw_Spatial_Data/custom_study_area/gadm41_CHN_1_NeiMongol.geojson",
-        output_path="data/NeiMongol/proximity/substation_distance_raster.tif"
+        region_gdf=region_demo,
+        output_path="data/NeiMongol/proximity/substation_distance_raster.tif",
     )

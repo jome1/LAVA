@@ -29,6 +29,7 @@ from utils.data_preprocessing import *
 from utils.local_OSM_shp_files import *
 from utils.fetch_OSM import osm_to_gpkg
 from utils.simplify import generate_overpass_polygon
+from utils.proximity_calc import generate_distance_raster
 
 # Record the starting time
 start_time = time.time()
@@ -48,9 +49,11 @@ consider_railways = config['railways']
 consider_roads = config['roads']
 consider_airports = config['airports']
 consider_waterbodies = config['waterbodies']
-consider_military = config['military']   
+consider_military = config['military']
 consider_wind_atlas = config['wind_atlas']
-consider_solar_atlas = config['solar_atlas']  
+consider_solar_atlas = config['solar_atlas']
+compute_substation_proximity = config.get('compute_substation_proximity', 0)
+compute_road_proximity = config.get('compute_road_proximity', 0)
 consider_additional_exclusion_polygons = config['additional_exclusion_polygons_folder_name']
 consider_additional_exclusion_rasters = config['additional_exclusion_rasters_folder_name']
 CRS_manual = config['CRS_manual']  #if None use empty string
@@ -83,7 +86,8 @@ start_time = time.time()
 # Get paths to data files or folders
 dirname = os.path.dirname(__file__)
 data_path = os.path.join(dirname, 'Raw_Spatial_Data')
-landcoverRasterPath = os.path.join(data_path, 'landcover', landcover_filename)
+if landcover_source == 'file':
+    landcoverRasterPath = os.path.join(data_path, 'landcover', landcover_filename)
 demRasterPath = os.path.join(data_path, 'DEM', DEM_filename)
 coastlinesFilePath = os.path.join(data_path, 'GOAS', 'goas.gpkg')
 protected_areas_folder = os.path.join(data_path, 'protected_areas')
@@ -252,6 +256,44 @@ elif config['OSM_source'] == 'overpass':
             json.dump(unsupported_summary, f, indent=2, ensure_ascii=False)
 
     print(f"\nUnsupported geometry summary saved to {rel_path(OSM_output_path)}")
+
+# create proximity raster for substations if data exists and calculation is enabled
+if compute_substation_proximity:
+    substations_path = os.path.join(OSM_output_path, "substations.gpkg")
+    if os.path.exists(substations_path):
+        substations_gdf = gpd.read_file(substations_path)
+        if not substations_gdf.empty:
+            proximity_dir = os.path.join(output_dir, "proximity")
+            os.makedirs(proximity_dir, exist_ok=True)
+            proximity_out = os.path.join(proximity_dir, "substation_distance.tif")
+            generate_distance_raster(
+                shapefile_path=substations_path,
+                region_gdf=region,
+                output_path=proximity_out,
+            )
+        else:
+            print("Proximity distance cannot be calculated as the substation is not provided.")
+    else:
+        print("Proximity distance cannot be calculated as the substation is not provided.")
+
+# create proximity raster for roads if data exists and calculation is enabled
+if compute_road_proximity:
+    roads_path = os.path.join(OSM_output_path, "roads.gpkg")
+    if os.path.exists(roads_path):
+        roads_gdf = gpd.read_file(roads_path)
+        if not roads_gdf.empty:
+            proximity_dir = os.path.join(output_dir, "proximity")
+            os.makedirs(proximity_dir, exist_ok=True)
+            proximity_out = os.path.join(proximity_dir, "road_distance.tif")
+            generate_distance_raster(
+                shapefile_path=roads_path,
+                region_gdf=region,
+                output_path=proximity_out,
+            )
+        else:
+            print("Proximity distance cannot be calculated as the roads are not provided.")
+    else:
+        print("Proximity distance cannot be calculated as the roads are not provided.")
 
 #clip and reproject additional exclusion polygons
 if consider_additional_exclusion_polygons:
