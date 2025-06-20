@@ -222,7 +222,7 @@ elif config['OSM_source'] == 'overpass':
     for feature_key in selected_osm_features_dict:
 
         # skip if we’ve already got this GeoPackage
-        gpkg_path = os.path.join(OSM_output_path, f"{feature_key}.gpkg")
+        gpkg_path = os.path.join(OSM_output_path, f"overpass_{feature_key}.gpkg")
 
         if os.path.exists(gpkg_path) and not config['force_osm_download']:
             print(f"⏭️  Skipping '{feature_key}' for {region_name_clean}: '{rel_path(gpkg_path)}' already exists.")
