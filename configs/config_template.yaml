@@ -3,7 +3,7 @@
 landcover_source: openeo   #'file' or 'openeo' or leave empty to not download (DEM data depends on landcover data due to co-registering)
 
 # OSM data
-OSM_source: geofabrik #'geofabrik' or 'overpass'
+OSM_source: overpass #'geofabrik' or 'overpass'
 railways: 1
 roads: 1
 airports: 1
@@ -24,7 +24,7 @@ solar_atlas: 1
 country_name_solar_atlas: Germany # name of country or "world" if you want to download the whole world 
 
 # additional polygons and rasters
-additional_exclusion_polygons_folder_name:   
+additional_exclusion_polygons_folder_name: 
 additional_exclusion_rasters_folder_name: 
 
 # protected areas
@@ -59,6 +59,9 @@ custom_study_area_filename: '' #if None use empty string
 # scenario name (written in available area filename)
 scenario: 'ref'
 
+# deployment density
+deployment_density: 50 # MW/km²
+
 # resolution manual
 resolution_manual: null
 
@@ -69,11 +72,11 @@ landcover_with_buffer: #dictionary of landcover code with corresponding buffer i
 
 # Below, if you dont want to use some data then insert "null" (without quotation marks). This will skip the file during the exclusion calculation.
 
-#DEM
+# DEM
 max_elevation: null #meters
 max_slope: 10 #degrees
 
-#spatial elements (buffer in meters)
+# spatial elements (buffer in meters)
 railways_buffer: 50
 roads_buffer: 50
 airports_buffer: 2000
@@ -82,26 +85,28 @@ military_buffer: null
 coastlines_buffer: 200
 protectedAreas_buffer: null
 
-# EITHER use substations OR transmission (meters)
-substations_inclusion_buffer: null
-transmission_inclusion_buffer: null
-
-#additional exclusion polygons
+# additional exclusion polygons
 additional_exclusion_polygons_buffer: [] #list of buffers in meters in the order of the files in the "additional_exclusion_polygons"-folder in the region data folder
 
-#solar and wind resources
-min_wind_speed: 7
+# solar and wind resources
+min_wind_speed: null
 max_wind_speed: null
 
 min_solar_production: null
 max_solar_production: null
 
-#area filter
+# inclusion filter
+# EITHER use substations OR transmission (meters)
+substations_inclusion_buffer: null
+transmission_inclusion_buffer: null
+
+# area filter
 min_pixels_connected: 0
 min_pixels_x: 5
 min_pixels_y: 5
 
-
+# model areas 
+model_areas_filename:
 
 
 #--advanced details----------------------------------------------------------------------
@@ -110,12 +115,16 @@ measure: LTAym_YearlyMonthlyTotals
 
 force_osm_download: 1 #if set to 1, OSM data will be downloaded even if it is already present in the folder
 
-# shape simplification for OSM
+# simplification tolerance for study area
+study_area:
+  tolerance: 0.0005
+
+# shape simplification for overpass
 target_vertices:  360
 tolerance_min: 0.0  # Minimum simplification tolerance
 tolerance_max: 0.5  # Maximum simplification tolerance, 
 
-# OSM feature classes (fclass names need to be in a list!)
+# GEOFABRIK: OSM feature classes for shapefiles (fclass names need to be in a list!)
 fclass: 
   railways: null # null means nothing is filtered
   roads: ['motorway', 'trunk', 'primary', 'secondary', 'tertiary', 'unclassified', 'motorway_link', 'trunk_link', 'primary_link', 'secondary_link', 'tertiary_link']
@@ -123,21 +132,34 @@ fclass:
   waterbodies: ['water', 'reservoir', 'river', 'riverbank']
   military: ['military']
 
-# Define OSM features to fetch from Overpass API
+# OVERPASS API: OSM features to fetch
 # the name before "_" should match the binary filtering above. 
+# all OSM keys with its values: https://wiki.openstreetmap.org/wiki/Map_features
+overpass_features:
+  railways: &railways ['rail']
+  roads: &roads ['motorway', 'trunk', 'primary', 'secondary', 'tertiary', 'unclassified', 'motorway_link', 'trunk_link', 'primary_link', 'secondary_link', 'tertiary_link']
+  airports: &airports ['aerodrome']
+  waterbodies: &waterbodies ['water']
+  military: &military ['military']
+  substations: &substations ['substation']
+  plants: &plants ['plant']
+  transmission_lines: &transmission_lines ['line']
+  generators: &generators ['generator']
+# don't change following lines
 osm_features_config:
-  substations: ["power", "substation", "way"]
-  plants: ["power", "plant", "way"]
-  transmission_lines: ["power","line", "way"]
-  generators: ["power", "generator", "node"]
-  roads: ["highway", "primary", "way"]
-  railways: ["railway", "rail", "way"]
-  airports: ["aeroway", "aerodrome", "way"]
-  waterbodies: ["natural", "water", "way"]
-  military: ["landuse", "military", "way"]
+  substations: ["power", *substations, "way"]
+  plants: ["power", *plants, "way"]
+  transmission_lines: ["power", *transmission_lines, "way"]
+  generators: ["power", *generators, "node"]
+  roads: ["highway", *roads, "way"]
+  railways: ["railway", *railways, "way"]
+  airports: ["aeroway", *airports, "way"]
+  waterbodies: ["natural", *waterbodies, "way"]
+  military: ["landuse", *military, "way"]
+
 
 # landcover data
-resolution_landcover: 0.008999280057498208 # in degress, since EPSG4326; 0.008999280057498208 degrees is ca. 1000m at equator
+resolution_landcover: null # in degress, since EPSG4326; 0.008999280057498208 degrees is ca. 1000m at equator
 
 # north facing pixels to be excluded (pixels with slope bigger X and aspect between Y and Z)
 north_facing_pixels: null
@@ -147,6 +169,4 @@ Z: 50
 
 # world database of protected areas
 wdpa_consider_status: ["Adopted", "Designated", "Established", "Inscribed"] #all possibilies: "Adopted", "Designated", "Established", "Inscribed", "Proposed"
-
-
 

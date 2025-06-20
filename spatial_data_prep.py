@@ -1,16 +1,8 @@
 # -*- coding: utf-8 -*-
 """
-created August 2024
-
 @author: Jonas Meier
 
-
-This script prepares raw spatial data for land exclusion in GLAES or ATLITE.
-The raw inputs should be downloaded to /Raw_Spatial_Data before execution. For landcover the openEO API can be used to download data automatically.
-The outputs are saved in /data.
-
-compare boundaries between different data sources: https://www.geoboundaries.org/visualize.html?country=DEU&mainSource=OSM-Boundaries&comparisonSource=geoBoundaries+%28Open%29&mainLevel=2&comparisonLevel=2
-This script uses administrative boundries from GADM.org via pygadm
+TBA
 """
 
 import time
@@ -89,7 +81,7 @@ coastlinesFilePath = os.path.join(data_path, 'GOAS', 'goas.gpkg')
 protected_areas_folder = os.path.join(data_path, 'protected_areas')
 wind_solar_atlas_folder = os.path.join(data_path, 'global_solar_wind_atlas')
 if consider_railways == 1 or consider_roads == 1 or consider_airports == 1 or consider_waterbodies == 1:
-    OSM_data_path = os.path.join(data_path, 'OSM', OSM_folder_name) 
+    OSM_data_path = os.path.join(data_path, 'OSM', OSM_folder_name)
 
 
 # Get region name without accents, spaces, apostrophes, or periods for saving files
@@ -121,6 +113,11 @@ else:
     region.set_crs('epsg:4326', inplace=True) #pygadm lib extracts information from the GADM dataset as GeoPandas GeoDataFrame. GADM.org provides files in coordinate reference system is longitude/latitude and the WGS84 datum.
     logging.info('using admin area within country as study area')
 
+# simplify polygon of study area (openeo can only handle polygons up to a certain size)
+try:
+    region["geometry"] = region["geometry"].simplify(config["study_area"]["tolerance"], preserve_topology=True)
+except Exception as e:
+    logging.warning(f"Polygon of study could not be simplified: {e}")
 region.to_file(os.path.join(output_dir, f'{region_name_clean}_EPSG4326.geojson'), driver='GeoJSON', encoding='utf-8')
 
 
@@ -193,7 +190,11 @@ region.to_crs(global_crs_obj, inplace=True)
 
 # OSM data
 if config['OSM_source'] == 'geofabrik':
-    process_all_local_osm_layer(config, region, region_name_clean, output_dir, OSM_data_path, target_crs=None)
+    OSM_output_dir = os.path.join(output_dir, 'OSM_Infrastructure')
+    print(OSM_output_dir)
+    os.makedirs(OSM_output_dir, exist_ok=True) 
+
+    process_all_local_osm_layer(config, region, region_name_clean, OSM_output_dir, OSM_data_path, target_crs=None)
 
 elif config['OSM_source'] == 'overpass':
 
@@ -352,7 +353,7 @@ if landcover_source == 'openeo':
         reproject_raster(openeo_landcover_colored_filePath, region_name_clean, local_crs_obj, 'nearest', 'uint8', landcover_openeo_local_CRS_colored)
 
         # save pixel size and unique land cover codes
-        landcover_information(landcover_openeo_local_CRS, output_dir, region_name, local_crs_tag)
+        landcover_information(landcover_openeo_local_CRS, output_dir, region_name_clean, local_crs_tag)
 
 
     elif os.path.exists(openeo_landcover_filePath):
@@ -367,7 +368,7 @@ if landcover_source == 'file':
         print('processing landcover')
         logging.info('using local file to get landcover')
         clip_reproject_raster(landcoverRasterPath, region_name_clean, region, 'landcover_local', local_crs_obj, 'nearest', 'int16', output_dir)
-        landcover_information(local_landcover_filePath, output_dir, region_name, local_crs_tag)
+        landcover_information(local_landcover_filePath, output_dir, region_name_clean, local_crs_tag)
 
     else:
         print(f"Local landcover already processed to region.")

@@ -11,6 +11,7 @@ from atlite.gis import shape_availability
 import rasterio
 import yaml
 from utils.data_preprocessing import clean_region_name
+from rasterstats import zonal_stats
 
 dirname = os.getcwd() 
 #main_dir = os.path.join(dirname, '..')
@@ -27,7 +28,9 @@ resampled = '' #'_resampled'
 # construct folder paths
 dirname = os.getcwd() 
 data_path = os.path.join(dirname, 'data', config['region_folder_name'])
+data_path_OSM = os.path.join(dirname, 'data', config['region_folder_name'], 'OSM_Infrastructure')
 data_from_DEM = os.path.join(data_path, 'derived_from_DEM')
+OSM_source = config['OSM_source']
 
 # Load the CRS
 # geo CRS
@@ -68,21 +71,21 @@ coastlines=0 if not os.path.isfile(coastlinesPath) and print('no coastlines file
 protectedAreasPath = os.path.join(data_path, f'protected_areas_{config['protected_areas_source']}_{region_name}_{global_crs_tag}.gpkg')
 protectedAreas=0 if not os.path.isfile(protectedAreasPath) and print('no protected areas file') is None else 1
 # OSM
-roadsPath = os.path.join(data_path, f'OSM_roads_{region_name}_{global_crs_tag}.gpkg')
+roadsPath = os.path.join(data_path_OSM, f'{OSM_source}_roads_{region_name}_{global_crs_tag}.gpkg')
 roads=0 if not os.path.isfile(roadsPath) and print('no roads file') is None else 1
-railwaysPath = os.path.join(data_path, f'OSM_railways_{region_name}_{global_crs_tag}.gpkg')
+railwaysPath = os.path.join(data_path_OSM, f'{OSM_source}_railways_{region_name}_{global_crs_tag}.gpkg')
 railways=0 if not os.path.isfile(railwaysPath) and print('no railways file') is None else 1
-airportsPath = os.path.join(data_path, f'OSM_airports_{region_name}_{global_crs_tag}.gpkg')
+airportsPath = os.path.join(data_path_OSM, f'{OSM_source}_airports_{region_name}_{global_crs_tag}.gpkg')
 airports=0 if not os.path.isfile(airportsPath) and print('no airports file') is None else 1
-waterbodiesPath = os.path.join(data_path, f'OSM_waterbodies_{region_name}_{global_crs_tag}.gpkg')
+waterbodiesPath = os.path.join(data_path_OSM, f'{OSM_source}_waterbodies_{region_name}_{global_crs_tag}.gpkg')
 waterbodies=0 if not os.path.isfile(waterbodiesPath) and print('no waterbodies file') is None else 1
-militaryPath = os.path.join(data_path, f'OSM_military_{region_name}_{global_crs_tag}.gpkg')
+militaryPath = os.path.join(data_path_OSM, f'{OSM_source}_military_{region_name}_{global_crs_tag}.gpkg')
 military=0 if not os.path.isfile(militaryPath) and print('no military file') is None else 1
 
 # OSM overpass
-substationsPath = os.path.join(data_path, f'OSM_substations_{region_name}_{global_crs_tag}.gpkg')
+substationsPath = os.path.join(data_path_OSM, f'{OSM_source}_substations_{region_name}_{global_crs_tag}.gpkg')
 substations=0 if not os.path.isfile(substationsPath) and print('no substations file') is None else 1
-transmissionPath = os.path.join(data_path, f'OSM_transmission_{region_name}_{global_crs_tag}.gpkg')
+transmissionPath = os.path.join(data_path_OSM, f'{OSM_source}_transmission_lines_{region_name}_{global_crs_tag}.gpkg')
 transmission=0 if not os.path.isfile(transmissionPath) and print('no transmission file') is None else 1
 
 
@@ -90,7 +93,7 @@ transmission=0 if not os.path.isfile(transmissionPath) and print('no transmissio
 
 # additional exclusion polygons
 additional_exclusion_polygons_Path = os.path.join(data_path, 'additional_exclusion_polygons')
-additional_exclusion_polygons=0 if not os.listdir(additional_exclusion_polygons_Path) and print('no additional exclusion polygon files') is None else 1
+additional_exclusion_polygons=0 if not os.path.exists(additional_exclusion_polygons_Path) and print('no additional exclusion polygon files') is None else 1
 
 # load unique land use codes
 with open(os.path.join(data_path, f'landuses_{region_name}.json'), 'r') as fp:
@@ -221,7 +224,12 @@ if protectedAreas==1 and config['protectedAreas_buffer'] is not None:
     info_list_exclusion.append(f'protected areas buffer: {config['railways_buffer']}')
 else: print('Protected Areas file not found or not selected in config.')
 
-# OSM overpass
+if transmission==1 and config['transmission_inclusion_buffer'] is not None: 
+    excluder.add_geometry(transmissionPath, buffer=config['transmission_buffer'])
+    info_list_exclusion.append(f'transmission buffer: {config['transmission_buffer']}')
+else: print('Transmission file not found or not selected in config.')
+
+# INCLUSION
 if substations==1 and config['substations_inclusion_buffer'] is not None: 
     excluder.add_geometry(substationsPath, buffer=config['substations_inclusion_buffer'], invert=True)
     info_list_exclusion.append(f'substations inclusion buffer: {config['substations_inclusion_buffer']}')
@@ -248,10 +256,17 @@ else: print('additional exclusion polygon files not found or not selected in con
 # calculate available areas
 masked, transform = shape_availability(region.geometry, excluder)
 
-eligible_share = masked.sum() * excluder.res**2 / region.geometry.item().area
+available_area = masked.sum() * excluder.res**2
+eligible_share = available_area / region.geometry.item().area
+
 print()
-eligible_share = f"The eligibility share is: {eligible_share:.2%}"
-print(eligible_share)
+print(f"The eligibility share is: {eligible_share:.2%}")
+print()
+print(f'The available area is: {available_area:.2}')
+print()
+if config['deployment_density']:
+    power_potential = available_area*1e-6 * config['deployment_density']
+    print(f'Power potential: {power_potential:.2} MW')
 
 print()
 print('following data was considered during exclusion:')
@@ -315,14 +330,46 @@ output_dir = os.path.join(data_path, 'available_land')
 os.makedirs(output_dir, exist_ok=True)
 
 # Write the array to a new .tif file
-if masked_area_filtered in array:
-    with rasterio.open(os.path.join(output_dir, f'{config['scenario']}_available_land_filtered-min{min_pixels_connected}_{region_name}_{local_crs_tag}.tif'), 'w', **metadata) as dst:
-        dst.write(array, 1)
-else:
-    with rasterio.open(os.path.join(output_dir, f'{config['scenario']}_available_land_total_{region_name}_{local_crs_tag}.tif'), 'w', **metadata) as dst:
-        dst.write(array, 1)    
+with rasterio.open(os.path.join(output_dir, f'{config['scenario']}_available_land_filtered-min{min_pixels_connected}_{region_name}_{local_crs_tag}.tif'), 'w', **metadata) as dst:
+    dst.write(array, 1)
+ 
 
+
+# model area stats
+if config['model_areas_filename']:
+    available_area_raster_filePath = os.path.join(output_dir, f'{config['scenario']}_available_land_filtered-min0_{region_name}_{local_crs_tag}.tif')
+
+    modelAreasPath =os.path.join(dirname, 'Raw_Spatial_Data', 'model_areas', f'{config['model_areas_filename']}')
+    model_areas = gpd.read_file(modelAreasPath)
+    model_areas.to_crs(local_crs_obj, inplace=True)
+    
+    stats = zonal_stats(model_areas,
+                    available_area_raster_filePath,
+                    stats=['sum'])
+    
+    model_areas['pixel_count'] = [list(d.values())[0] for d in stats]
+    model_areas['available_area_m2'] = model_areas['pixel_count'] * excluder.res**2
+    model_areas['available_area_km2'] = model_areas['pixel_count'] *1e-6
+    if config['deployment_density']:
+        model_areas['power_potential_MW'] = (model_areas['available_area_m2']*1e-6) * config['deployment_density']
+
+    # create summary table
+    first_column = model_areas.columns[0]
+    columns = [first_column, "pixel_count", "available_area_m2", "available_area_km2", "power_potential_MW"]
+    subset = model_areas[columns]
+    print('\npotentials in model areas:')
+    print(subset.to_string(index=False))
+
+
+# save info in textfile
 with open(os.path.join(output_dir, f"{config['scenario']}_exclusion_info.txt"), "w") as file:
     for item in info_list_exclusion:
         file.write(f"{item}\n")
-    file.write(f"\n{eligible_share}")
+    file.write(f"\neligibility share: {eligible_share:.2%}")
+    file.write(f"\navailable area: {available_area:.2} m2")
+    file.write(f"\npower potential: {power_potential:.2} MW")
+
+    if config['model_areas_filename']:
+        # Write table from GeoDataFrame subset
+        file.write("\n\nResults for model areas:\n")
+        file.write(subset.to_string(index=False))

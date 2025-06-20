@@ -524,6 +524,8 @@ def clean_region_name(region_name: str) -> str:
     region_name_clean = region_name_clean.replace(".", "")
     region_name_clean = region_name_clean.replace("'", "")
     region_name_clean = region_name_clean.replace("_", "")
+    region_name_clean = region_name_clean.replace("(", "-")
+    region_name_clean = region_name_clean.replace(")", "-")
     return region_name_clean
 
 
