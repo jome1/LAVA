@@ -471,10 +471,12 @@ try:
 
     #------------- Terrain Ruggedness Index -----------------
     if compute_terrain_ruggedness:
+        
         tri_FilePath = os.path.join(richdem_helper_dir, f'TerrainRuggednessIndex_{region_name_clean}_EPSG{EPSG}.tif')
         if os.path.exists(tri_FilePath):
             print(f"Terrain Ruggedness Index already exists at {rel_path(tri_FilePath)}. Skipping calculation.")
         else:
+            print('\n processing Terrain Ruggedness Index')
             dem = xdem.DEM(dem_localCRS_Path)
             tri = dem.terrain_ruggedness_index(window_size=9)
             tri_array = tri.data
