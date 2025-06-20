@@ -23,6 +23,7 @@ import rasterio
 import pygadm
 import openeo
 import richdem
+import xdem
 import logging
 from pyproj import CRS
 from utils.data_preprocessing import *
@@ -54,6 +55,7 @@ consider_wind_atlas = config['wind_atlas']
 consider_solar_atlas = config['solar_atlas']
 compute_substation_proximity = config.get('compute_substation_proximity', 0)
 compute_road_proximity = config.get('compute_road_proximity', 0)
+compute_terrain_ruggedness = config.get('compute_terrain_ruggedness', 0)
 consider_additional_exclusion_polygons = config['additional_exclusion_polygons_folder_name']
 consider_additional_exclusion_rasters = config['additional_exclusion_rasters_folder_name']
 CRS_manual = config['CRS_manual']  #if None use empty string
@@ -466,6 +468,17 @@ try:
     aspectFilePath4326 = os.path.join(richdem_helper_dir, f'aspect_{region_name_clean}_EPSG4326.tif')
     reproject_raster(aspectFilePathLocalCRS, region_name_clean, 4326, 'nearest', 'int16', aspectFilePath4326)
 
+    #------------- Terrain Ruggedness Index -----------------
+    if compute_terrain_ruggedness:
+        tri_FilePath = os.path.join(richdem_helper_dir, f'TerrainRuggednessIndex_{region_name_clean}_EPSG{EPSG}.tif')
+        if os.path.exists(tri_FilePath):
+            print(f"Terrain Ruggedness Index already exists at {rel_path(tri_FilePath)}. Skipping calculation.")
+        else:
+            dem = xdem.DEM(dem_localCRS_Path)
+            tri = dem.terrain_ruggedness_index(window_size=9)
+            tri_array = tri.data
+            tri.save(tri_FilePath)
+    
 
     # create map showing pixels with slope bigger X and aspect between Y and Z (north facing with slope where you would not build PV)
     # local CRS co-registered
