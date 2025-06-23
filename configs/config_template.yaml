@@ -18,13 +18,13 @@ transmission_lines: 1
 generators: 1
 plants: 1
 
-# compute helper datasets
-compute_substation_proximity: 1
-compute_road_proximity: 1
-compute_terrain_ruggedness: 1
-
 # coastlines 
 coastlines: 1
+
+# compute helper datasets
+compute_substation_proximity: 0
+compute_road_proximity: 0
+compute_terrain_ruggedness: 0
 
 # wind and solar resources
 wind_atlas: 1
@@ -42,11 +42,6 @@ protected_areas_filename: '' #include file ending (.gpkg or .geojson), needs to 
 
 
 CRS_manual:  #if None use empty string
-
-# proximity data
-compute_substation_proximity: 1
-compute_road_proximity: 1
-compute_terrain_ruggedness: 1
 
 
 # name of folders and files with raw data
