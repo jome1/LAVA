@@ -7,184 +7,185 @@ import matplotlib.pyplot as plt
 import geopandas as gpd
 from rasterio.plot import show
 import os
+import json
 from pathlib import Path
+import yaml
+from utils.data_preprocessing import clean_region_name
+import pickle
 
 
-### --------- Input data and configuration ------------- ###
+#-----------------------------------Snakemake input to be implemented-----------------------------------#
+weather_year = 2010
 
-class M(object):
-    pass
 
-# Store all parameters in model object
-def InstantiateModel():
-
-    # Make model object from class
-    m = M()
-
-    m.years = [str(y) for y in range(1990,2020)]
-
-    m.tech = "OnshoreWind"
-
-    m.solarpanel = atlite.solarpanels.CSi
-    m.windturbine_onshore = Path("K:/CodeModules/LAVA_china/LW_farm.yaml")
-
-    m.data_path = "E:/CETO 2025 Spatial Analysis data/GIS/ERA5/China_mainland_1990_2.nc"
-
-    m.output_path = f"E:/CETO 2025 Spatial Analysis data/NeiMongol/{m.tech}_profile.csv"
-
-    m.derate = 0.95    
-
-    return m
-
-# --------------------- Init --------------------- #
+#------------------------------------------- Load configuration
 dirname = os.getcwd() 
-data_path = os.path.join(dirname, 'data', region_folder_name)
+with open(os.path.join("configs/config.yaml"), "r", encoding="utf-8") as f:
+    config = yaml.load(f, Loader=yaml.FullLoader) 
 
-EPSG_custom = config['EPSG_manual']
-with open(os.path.join(data_path, region_name+'_EPSG.pkl'), 'rb') as file:
-    EPSG = pickle.load(file)
-if EPSG_custom:
-    EPSG = int(EPSG_custom)
-EPSG = "EPSG:32650"
+region_name = config['region_name'] #if country is studied, then use country name
+region_name = clean_region_name(region_name)
 
-atlite_year = 2010
+data_path = os.path.join(dirname, 'data', config['region_folder_name'])
+
+# Load the CRS
+# geo CRS
+with open(os.path.join(data_path, region_name+'_global_CRS.pkl'), 'rb') as file:
+        global_crs_obj = pickle.load(file)
+# projected CRS
+with open(os.path.join(data_path, region_name+'_local_CRS.pkl'), 'rb') as file:
+        local_crs_obj = pickle.load(file)
+
+print(f'geo CRS: {global_crs_obj}; projected CRS: {local_crs_obj}')
+
+# Extract tag for filename, e.g., 'EPSG3035' or 'ESRI102003'
+auth = global_crs_obj.to_authority()
+global_crs_tag = ''.join(auth) if auth else global_crs_obj.to_string().replace(":", "_")
+auth = local_crs_obj.to_authority()
+local_crs_tag = ''.join(auth) if auth else local_crs_obj.to_string().replace(":", "_")
+
+# load pixel size
+if config['resolution_manual'] is not None:
+    res = config['resolution_manual']
+else:
+    with open(os.path.join(data_path, f'pixel_size_{region_name}_{local_crs_tag}.json'), 'r') as fp:
+        res = json.load(fp)
+
+# TO DO: The 3 files per weather year should be merge into one file as part of the bias correction process 
+weather_data_path = os.path.join(config['weather_data_path'], f'China_mainland_{weather_year}_2.nc')
 
 # Load region geometry
-#regionPath =os.path.join(data_path, f'{region_name}_{EPSG}.geojson')
-regionPath = "E:/CETO 2025 Spatial Analysis data/GIS/Admin boundaries/China_provinces.gpkg"
+regionPath = os.path.join(data_path, f'{region_name}_{local_crs_tag}.geojson')
 region = gpd.read_file(regionPath)
-region = region[region['name'] == "East-InnerMongolia"]
-
-# Load potential
-#potentialPath = os.path.join(data_path, f'available_land_filtered-min{min_pixels_connected}_{region_name}_EPSG{EPSG}.tif')
-potentialPath = "E:/CETO 2025 Spatial Analysis data/NeiMongol/available_land_filtered-min5_gradeE_China_EPSG32650.tif"
 
 
-# --------------------- Main script --------------------- #
-m = InstantiateModel()
+# Load potential (currently the available land, but should be changed to the areas from the suitability analysis)
+min_pixels_connected = config['min_pixels_connected']
+# TO DO: Change to different paths for solar and wind
+potentialPath = os.path.join(data_path, f'{config['scenario']}_available_land_filtered-min{min_pixels_connected}_{region_name}_{local_crs_tag}.tif')
 
-# Find bounds of the region
-bounds = region.to_crs(EPSG).total_bounds
-
-# Adjust
-x1, y1, x2, y2 = bounds.values[0]
-x=slice(x1 - 0.2, x2 + 0.2),
-y=slice(y1 - 0.2, y2 + 0.2),
 
 # Load weather data cutout
-cutout = atlite.Cutout(path=m.data_path).sel(x=x, y=y)
-
-# Loading potential
-excluder = ExclusionContainer(crs=EPSG)
-excluder.add_raster(potentialPath, codes=1, invert=True)
-
-# Availability of the area
-masked, transform = excluder.compute_shape_availability(region)
-fig, ax = plt.subplots()
-excluder.plot_shape_availability(region)
-eligible_share = masked.sum() * excluder.res**2 / region.geometry.item().area
-print(f"The eligibility share is: {eligible_share:.2%}")
-
-# `A` is an DataArray with 3 dimensions (`shape`, `x`, `y`) and very sparse data. 
-# It indicates the relative overlap of weather cell `(x, y)` with geometry `region` while excluding the area specified by the `excluder`. 
-A = cutout.availabilitymatrix(region, excluder)
-
-# Aggregation of potential to weather data cells
-fig, ax = plt.subplots()
-region.plot(ax=ax, edgecolor="k", color="None")
-A.plot(ax=ax, cmap="Greens")
-#cutout.grid.plot(ax=ax, color="None", edgecolor="grey")
-
-capacity_matrix = A.stack(spatial=["y", "x"])
+x1, y1, x2, y2 = region.to_crs(global_crs_obj).total_bounds 
+offset = 1 # Offset to ensure the cutout includes the entire region
+cutout = atlite.Cutout(path=weather_data_path).sel(x=slice(x1 - offset, x2 + offset), y=slice(y1 - offset, y2 + offset))
 
 
-#---- Heat demand -----
+#--------------------- Capacity matrix ---------------------
 
-I = cutout.indicatormatrix(region)
+if config['tech'] in ["SolarPV", "SolarPVTracking", "OnshoreWind", "OffshoreWind"]:
+    # Loading potential
+    excluder = ExclusionContainer(crs=local_crs_obj, res=res)
+    excluder.add_raster(potentialPath, codes=1, invert=True)
 
-pop_layout = xr.open_dataarray(pop_layout)
+    # Availability of the area
+    masked, transform = excluder.compute_shape_availability(region)
+    fig, ax = plt.subplots()
+    excluder.plot_shape_availability(region)
+    available_area = masked.sum(dtype=np.float64) * excluder.res**2
+    eligible_share = available_area / region.geometry.item().area
+    print(f"The eligibility share is: {eligible_share:.2%}")
 
-stacked_pop = pop_layout.stack(spatial=("y", "x"))
-M = I.T.dot(np.diag(I.dot(stacked_pop)))
+    # `A` is an DataArray with 3 dimensions (`shape`, `x`, `y`) and very sparse data. 
+    # It indicates the relative overlap of weather cell `(x, y)` with geometry `region` while excluding the area specified by the `excluder`. 
+    A = cutout.availabilitymatrix(region, excluder)
 
-pop_matrix = sp.sparse.csr_matrix(pop_map.T)
+    # Aggregation of potential to weather data cells
+    fig, ax = plt.subplots()
+    region.plot(ax=ax, edgecolor="k", color="None")
+    A.plot(ax=ax, cmap="Greens")
+    #cutout.grid.plot(ax=ax, color="None", edgecolor="grey")
 
+    capacity_matrix = A.stack(spatial=["y", "x"])
 
+if config['tech'] == "HeatDemand":
+    population_path = "E:/CETO 2025 Spatial Analysis data/GIS/Population/China_population_2023.nc"
+    pop_layout = xr.open_dataarray(population_path).sel(x=slice(x1 - offset, x2 + offset), y=slice(y1 - offset, y2 + offset))
+    # set nan values to zero
+    pop_layout = pop_layout.fillna(0)
+    # Normalize population layout to the indicator matrix
+    pop_layout = pop_layout / pop_layout.max()
 
+    capacity_matrix = pop_layout.stack(spatial=("y", "x"))
 
-# Match case statement for different technologies
-match m.tech:
+# Simulate the technology profiles based on the configuration
+match config["tech"]:
     case "SolarPV":
-        df_tech = cutout.pv(
+        ds_tech = cutout.pv(
             matrix=capacity_matrix,
-            panel=m.solarpanel,
+            panel=config["solarpanel"],
             orientation="latitude_optimal",
             index=region.index,
             per_unit=True
         )
         # Apply derate
-        df_tech = df_tech * m.derate
+        ds_tech = ds_tech * config["tech_derate"]
 
     case "SolarPVTracking":
-        df_tech = cutout.pv(
+        ds_tech = cutout.pv(
             matrix=capacity_matrix,
-            panel=m.solarpanel,
+            panel=config["solarpanel"],
             orientation="latitude_optimal",
             index=region.index,
             tracking="horizontal",
             per_unit=True
         )
         # Apply derate
-        df_tech = df_tech * m.derate
+        ds_tech = ds_tech * config["tech_derate"]
 
     case "OnshoreWind":
-        df_tech = cutout.wind(
+        ds_tech = cutout.wind(
             matrix=capacity_matrix,
-            turbine=m.windturbine_onshore,
+            turbine=Path(config["windturbine_onshore"]),
             index=region.index,
             per_unit=True
         )
         # Apply derate
-        df_tech = df_tech * m.derate
+        ds_tech = ds_tech * config["tech_derate"]
 
     case "OffshoreWind":
-        df_tech = cutout.wind(
+        ds_tech = cutout.wind(
             matrix=capacity_matrix,
-            turbine=m.windturbine_offshore,
+            turbine=config["windturbine_offshore"],
             index=region.index,
             per_unit=True
         )
         # Apply derate
-        df_tech = df_tech * m.derate
+        ds_tech = ds_tech * config["tech_derate"]
 
     case "Hydro":
         plants, basins = hydro()
-        df_tech = cutout.hydro(
+        ds_tech = cutout.hydro(
             plants=plants,
             hydrobasins=basins
         )
         # Apply derate
-        df_tech = df_tech * m.derate
+        ds_tech = ds_tech * config["tech_derate"]
 
     case "HeatDemand":
-        df_tech = cutout.heat_demand(
-            threshold=15,
+        ds_tech = cutout.heat_demand(
+            matrix=capacity_matrix,
+            threshold=config["heat_demand_threshold"],
             a=1,
-            constant=0 # Corresponding to no temperature independent heat demand
+            constant=config["heat_demand_constant"]
         )
 
     case _:
-        raise ValueError(f"Unknown technology: {tech}")
+        raise ValueError(f"Unknown technology: {config["tech"]}")
+
+# Convert to DataArray to dataframe
+df_tech = ds_tech.to_pandas()
+
+if config["tech"] == "HeatDemand":
+    # Set demand to zero outside of heating season
+    start_day = config["heat_demand_start_day"]
+    end_day = config["heat_demand_end_day"]
+    df_tech.loc[f"{weather_year}-{start_day}":f"{weather_year}-{end_day}"] = 0
 
 
-
-# Set demand to zero outside of heating season
-start_day = config["heat_demand_start_day"]
-end_day = config["heat_demand_end_day"]
-regonal_daily_hd.loc[f"{atlite_year}-{start_day}":f"{atlite_year}-{end_day}"] = 0
-
-# Convert to DataFrame for export 
-df_tech = df_tech.to_pandas().to_csv(output_path)
+# Convert to DataFrame for export
+output_path = os.path.join(data_path, f"/energy_profiles/{config['tech']}_profile_{region_name}.csv")
+ds_tech = ds_tech.to_pandas().to_csv(output_path)
 
 
 
@@ -206,12 +207,12 @@ df_tech = df_tech.to_pandas().to_csv(output_path)
 
 
 # --------------------- Misc --------------------- #
-df_tech.to_pandas().plot(ylabel="Power [GW]", ls="--", figsize=(10, 4))
+ds_tech.to_pandas().plot(ylabel="Power [GW]", ls="--", figsize=(10, 4))
 wnd.to_pandas().plot(ylabel="Power [GW]", ls="--", figsize=(10, 4))
 # Apply derate
-df_tech = df_tech * m.derate
+ds_tech = ds_tech * m.derate
 
-df_tech.name = 'Nei-Mongol'
+ds_tech.name = 'Nei-Mongol'
 
 from atlite.windturbines import load_turbine, turbineconfig
 

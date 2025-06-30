@@ -177,3 +177,56 @@ Z: 50
 # world database of protected areas
 wdpa_consider_status: ["Adopted", "Designated", "Established", "Inscribed"] #all possibilies: "Adopted", "Designated", "Established", "Inscribed", "Proposed"
 
+
+#--Weather and energy data assumptions-------------------------------------------------------------
+weather_data_path: "E:/CETO 2025 Spatial Analysis data/GIS/ERA5/"
+
+weather_years: [str(y) for y in range(1990,2020)]
+
+# Technology data
+tech: "HeatDemand"
+tech_derate: 0.95
+solarpanel: atlite.solarpanels.CSi
+windturbine_onshore: 'LW_farm.yaml'
+
+# Heat demand
+heat_demand_start_day: "01-10" #start day of heat demand profile, format: DD-MM
+heat_demand_end_day: "30-04" #end day of heat demand profile, format: DD-MM
+heat_demand_hour_shift: 8 # shift of heat demand profile in hours, such that daily heat demand average follows diurnal temperature profile
+heat_demand_constant: 0 # Corresponding to no temperature independent heat demand
+heat_demand_threshold: 15 # threshold for heat demand profile, in degrees Celsius
+
+#--Suitability and cost assumptions----------------------------------------------------------------------
+
+# Wind resource groups (m/s)
+wg_thr: {
+    'WG1': [3.5, 5], 
+    'WG2': [5, 7], 
+    'WG3': [7, 25]
+}
+
+# Solar resource groups (kWh/m²/day)
+sg_thr: {
+    'SG1': [2.2, 3.8],
+    'SG2': [3.8, 4.4],
+    'SG3': [4.4, 10]
+    }
+
+# Cost tiers (Money)
+tiers: {
+    'Tier1': [0, 0.5e6],
+    'Tier2': [0.5e6, 1e6],
+    'Tier3': [1e6, 2e6]
+    }
+
+# Substation distance cost factor (Money/km)
+sub_dist_cost_factor: 10
+# Road distance cost factor (Money/km)
+road_cost_factor: 1
+# Terrain cost  (Money)
+terrain_cost: {
+    'Plain': 0.5,
+    'Hills': 1,
+    'Mountains': 2
+
+}
