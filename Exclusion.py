@@ -240,7 +240,7 @@ else: print('Coastlines file not found or not selected in config.')
 
 if protectedAreas==1 and config['protectedAreas_buffer'] is not None: 
     excluder.add_geometry(protectedAreasPath, buffer=config['protectedAreas_buffer'])
-    info_list_exclusion.append(f"protected areas buffer: {config['railways_buffer']}")
+    info_list_exclusion.append(f"protected areas buffer: {config['protectedAreas_buffer']}")
 else: print('Protected Areas file not found or not selected in config.')
 
 if transmission==1 and config['transmission_lines_buffer'] is not None: 
