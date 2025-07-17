@@ -1,7 +1,9 @@
 from pathlib import Path
 
 regions = ["NeiMongol"]
-technologies = ["solar", "wind"]
+technologies = ["solar", "onshorewind"]
+scenarios = ["Ref"]
+weather_years = [str(y) for y in range(1990, 2020)]
 
 def logpath(region, filename):
     return Path("data") / region / "snakemake_log" / filename
@@ -43,3 +45,18 @@ rule suitability:
         region=lambda wc: wc.region
     script:
         "suitability.py"
+
+rule energy_profiles:
+    input:
+        expand(logpath("{region}", "suitability.done"), region=regions)
+    output:
+        expand(logpath("{region}", "energy_profiles_{technology}_{weather_year}.done"), region=regions, technology=technologies, weather_year=weather_years)
+    params:
+        region=lambda wc: wc.region,
+        technology=lambda wc: wc.technology,
+        scenario=lambda wc: wc.scenario
+        weather_year=lambda wc: wc.weather_year
+    script:
+        "energy_profiles.py"
+
+
