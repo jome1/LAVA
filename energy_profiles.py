@@ -10,17 +10,10 @@ import os
 import json
 from pathlib import Path
 import yaml
-from utils.data_preprocessing import clean_region_name
+from utils.data_preprocessing import clean_region_name, rel_path
 import pickle
 import argparse
 import glob
-
-
-#-----------------------------------Snakemake input to be implemented-----------------------------------#
-weather_year = 1990
-# region
-# pontential_path
-
 
 #------------------------------------------- Load configuration
 dirname = os.getcwd() 
@@ -94,26 +87,17 @@ else:
     with open(os.path.join(data_path, f'pixel_size_{region_name}_{local_crs_tag}.json'), 'r') as fp:
         res = json.load(fp)
 
-
-# TO DO: The 3 files per weather year should be merge into one file as part of the bias correction process 
-weather_data_path = os.path.join(config['weather_data_path'], f'China_mainland_{weather_year}_1.nc')
-
 # Load region geometry
 regionPath = os.path.join(data_path, f'{region_name}_{local_crs_tag}.geojson')
 region = gpd.read_file(regionPath)
 
-
 # Open json file with resource grades
-resource_grades_file = os.path.join(data_path, 'suitability', f'{region_name}_{scenario}_relevant_resource_grades.json')
+resource_grades_file = os.path.join(data_path, 'suitability', f'{region_name}_{technology}_relevant_resource_grades.json')
 with open(resource_grades_file, 'r') as f:
     resource_grades = json.load(f) 
 
-# Load weather data cutout
-
-# List all files in the weather data path starting with 'China_mainland' and ending with '.nc'
+# List all files in the weather data files (in case of multiple files per year)
 cutout_files = glob.glob(os.path.join(config['weather_data_path'], f'*_{weather_year}_*'))
-
-cutout = atlite.Cutout(path=cutout_files[0])
 
 # Regional entent
 x1, y1, x2, y2 = region.to_crs(global_crs_obj).total_bounds 
@@ -123,13 +107,12 @@ offset = 1 # Offset to ensure the cutout includes the entire region
 ERA5_wnd100m_bias_path = os.path.join(config['weather_data_path'], 'bias_correction_factors', 'ERA5_wnd100m_bias.nc')
 ERA5_wnd100m_bias = xr.open_dataset(ERA5_wnd100m_bias_path).sel(x=slice(x1 - offset, x2 + offset), y=slice(y1 - offset, y2 + offset))
 
-
 # Preallocate a dataframe for resource grades and time series
 time = pd.date_range(start=f'{weather_year}-01-01', end=f'{weather_year}-12-31 23:00', freq='h')
 df_rg = pd.DataFrame(index=time, columns=resource_grades)
 
 for cutout_file in cutout_files:
-    print(f"Processing cutout file: {cutout_file}")
+    print(f"Processing cutout file: {rel_path(cutout_file)}")
     cutout = atlite.Cutout(path=cutout_file).sel(x=slice(x1 - offset, x2 + offset), y=slice(y1 - offset, y2 + offset))
     # Apply bias correction to the weather data
     cutout.data['wnd100m'] = cutout.data['wnd100m'] * ERA5_wnd100m_bias['wnd100m']
@@ -139,7 +122,7 @@ for cutout_file in cutout_files:
         # Load the resource grade
         potentialPath = os.path.join(
             data_path, 'suitability', 
-            f"{rg}_{scenario}_{local_crs_tag}.tif"
+            f"{rg}_{local_crs_tag}.tif"
         )
         
         # Loading potential
@@ -169,9 +152,11 @@ for cutout_file in cutout_files:
         # Simulate the technology profiles based on the configuration
         match technology:
             case "solar":
+                technology_path = os.path.join(dirname, 'technologies', tech_config["panel"])
+
                 ds_tech = cutout.pv(
                     matrix=capacity_matrix,
-                    panel=tech_config["solarpanel"],
+                    panel=Path(technology_path),
                     orientation="latitude_optimal",
                     index=region.index,
                     per_unit=True
@@ -180,9 +165,11 @@ for cutout_file in cutout_files:
                 ds_tech = ds_tech * tech_config["tech_derate"]
 
             case "solartracking":
+                technology_path = os.path.join(dirname, 'technologies', tech_config["panel"])
+
                 ds_tech = cutout.pv(
                     matrix=capacity_matrix,
-                    panel=tech_config["solarpanel"],
+                    panel=Path(technology_path),
                     orientation="latitude_optimal",
                     index=region.index,
                     tracking="horizontal",
@@ -192,9 +179,11 @@ for cutout_file in cutout_files:
                 ds_tech = ds_tech * tech_config["tech_derate"]
 
             case "onshorewind":
+                technology_path = os.path.join(dirname, 'technologies', tech_config["turbine"])
+                
                 ds_tech = cutout.wind(
                     matrix=capacity_matrix,
-                    turbine=Path(tech_config["windturbine_onshore"]),
+                    turbine=Path(technology_path),
                     index=region.index,
                     per_unit=True
                 )
@@ -202,9 +191,11 @@ for cutout_file in cutout_files:
                 ds_tech = ds_tech * tech_config["tech_derate"]
 
             case "offshorewind":
+                technology_path = os.path.join(dirname, 'technologies', tech_config["turbine"])
+
                 ds_tech = cutout.wind(
                     matrix=capacity_matrix,
-                    turbine=tech_config["windturbine_offshore"],
+                    turbine=Path(technology_path),
                     index=region.index,
                     per_unit=True
                 )

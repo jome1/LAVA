@@ -28,6 +28,10 @@
 !Raw_Spatial_Data/additional_exclusion_polygons/.gitkeep
 !Raw_Spatial_Data/global_solar_wind_atlas
 !Raw_Spatial_Data/global_solar_wind_atlas/.gitkeep
+!technologies
+!technologies/HW_farm.yaml
+!technologies/LW_farm.yaml
+!technologies/CSi.yaml
 !configs
 !configs/config_template.yaml
 !configs/config_template_china.yaml

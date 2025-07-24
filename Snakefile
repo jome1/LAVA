@@ -68,6 +68,7 @@ rule suitability:
     shell:
         "python suitability.py --region {wildcards.region}"
 
+
 rule energy_profiles:
     input:
          logpath("{region}", "suitability.done")

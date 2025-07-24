@@ -9,42 +9,55 @@ deployment_density: 50 # MW/km²
 resolution_manual: 
 
 #landcover codes (buffer in meters) (here landcover codes for openeo as default example)
-landcover_without_buffer: [10,40,70,80,90] #list of landcover codes
+landcover_without_buffer: [10,40,70,80,90,95] #list of landcover codes
 landcover_with_buffer: #dictionary of landcover code with corresponding buffer in meters
   50: 2000 #built-up land with 2000m buffer 
 
 # Below, if you dont want to use some data then insert "null" (without quotation marks). This will skip the file during the exclusion calculation.
 
 # DEM
-max_elevation: 2000 #meters
+max_elevation: null #meters
 max_slope: 20 #degrees
+
+#landcover codes (buffer in meters) (here landcover codes for openeo as default example)
+#| Code | Class                    |
+#| ---- | ------------------------ |
+#| 10   | Tree cover               |
+#| 20   | Shrubland                |
+#| 30   | Grassland                |
+#| 40   | Cropland                 |
+#| 50   | Built-up                 |
+#| 60   | Bare / sparse vegetation |
+#| 70   | Snow and ice             |
+#| 80   | Permanent water bodies   |
+#| 90   | Herbaceous wetland       |
+#| 95   | Mangroves                |
+#| 100  | Moss and lichen          |
 
 # spatial elements (buffer in meters)
 railways_buffer: 50
 roads_buffer: 50
 airports_buffer: 2000
-waterbodies_buffer: 20
-military_buffer: 100
+waterbodies_buffer: 500
+military_buffer: null
 coastlines_buffer: 200
-protectedAreas_buffer: 50
+protectedAreas_buffer: 1000
 transmission_lines_buffer: 100
 
 # additional exclusion polygons
 additional_exclusion_polygons_buffer: [] #list of buffers in meters in the order of the files in the "additional_exclusion_polygons"-folder in the region data folder
 
 # solar and wind resources
-min_wind_speed: 0
-max_wind_speed: 15
+min_wind_speed: 3.5
+max_wind_speed: 25
 
-min_solar_production: 0
-max_solar_production: 5000
-
-transmission_buffer: 100 #buffer in meters for transmission lines, if None then no buffer is applied
+min_solar_production: 1000
+max_solar_production: 3000
 
 # inclusion filter
 # EITHER use substations OR transmission (meters)
-substations_inclusion_buffer: 10000
-transmission_inclusion_buffer: 10000
+substations_inclusion_buffer: 50000
+transmission_inclusion_buffer: 50000
 
 # area filter
 min_pixels_connected: 5
@@ -54,16 +67,12 @@ min_pixels_y: # currently not working, use min_pixels_connected instead
 # model areas 
 model_areas_filename:
 
-# --Suitability and cost assumptions--------------------------------------------
-
 # Technology assumptions
-solarpanel: CSi
+panel: 'CSi.yaml'
 tech_derate: 0.95
 
-# Solar resource groups (kWh/m²/day)
+# Solar resource groups (kWh/m²/year)
 sg_thr: 
-    SG1: [800, 1000]
-    SG2: [1000, 1300]
-    SG3: [1300, 1600]
-    SG4: [1600, 1900]
-    SG5: [1900, 3000]
+    SG1: [1000, 1300]
+    SG2: [1300, 1600]
+    SG3: [1600, 3000]

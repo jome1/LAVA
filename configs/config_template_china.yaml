@@ -22,9 +22,9 @@ plants: 1
 coastlines: 1
 
 # compute helper datasets
-compute_substation_proximity: 0
-compute_road_proximity: 0
-compute_terrain_ruggedness: 0
+compute_substation_proximity: 1
+compute_road_proximity: 1
+compute_terrain_ruggedness: 1
 
 # wind and solar resources
 wind_atlas: 1
@@ -46,7 +46,7 @@ CRS_manual:  #if None use empty string
 
 # name of folders and files with raw data
 region_folder_name: NeiMongol #always needed, same name as in gadm.org (if country is studied, then use country name)
-OSM_folder_name: NeiMongol #name of the folder with all raw OSM shapefiles from Geofabrik; needed if Geofabrik used as OSM source
+OSM_folder_name:  #name of the folder with all raw OSM shapefiles from Geofabrik; needed if Geofabrik used as OSM source
 
 DEM_filename: gebco_cutout.tif 
 landcover_filename: # PROBAV_LC100_global_v3.0.1_2019-nrt_Discrete-Classification-map_EPSG-4326.tif
@@ -58,69 +58,23 @@ region_name: NeiMongol
 country_code: CHN       #always needed (also for global wind atlas)
 gadm_level: 1  # needed when downloading data from GADM - 1 for country, 2 for state, 3 for district, etc. (see gadm.org)
 # or use custom region (if file is passed, then this is used as default over the GADM definitions above)
-custom_study_area_filename: 'gadm41_CHN_1_NeiMongol.geojson' #if None use empty string
-
+#if you need a dynamic filename, then use {region_name} in the filename which is replaced in the spatial_data_prep script
+custom_study_area_filename: 'gadm41_CHN_1_{region_name}.geojson' #if None use empty string
 
 
 #--exclusions----------------------------------------------------------------------
 # scenario name (written in available area filename)
-scenario: 'ref'
-technology: 'onshorewind' # or 'solar', used for the filename of the available area
-
-# deployment density
-deployment_density: 50 # MW/km²
+scenario: ref
+technology: onshorewind # or 'solar', used for the filename of the available area
 
 # resolution manual
 resolution_manual: null
-
-#landcover codes (buffer in meters) (here landcover codes for openeo as default example)
-landcover_without_buffer: [10,40,70,80,90] #list of landcover codes
-landcover_with_buffer: #dictionary of landcover code with corresponding buffer in meters
-  50: 2000 #built-up land with 2000m buffer 
-
-# Below, if you dont want to use some data then insert "null" (without quotation marks). This will skip the file during the exclusion calculation.
-
-# DEM
-max_elevation: 2000 #meters
-max_slope: 20 #degrees
-
-# spatial elements (buffer in meters)
-railways_buffer: 50
-roads_buffer: 50
-airports_buffer: 2000
-waterbodies_buffer: 20
-military_buffer: 100
-coastlines_buffer: 200
-protectedAreas_buffer: 50
-transmission_lines_buffer: 100
-
-# additional exclusion polygons
-additional_exclusion_polygons_buffer: [] #list of buffers in meters in the order of the files in the "additional_exclusion_polygons"-folder in the region data folder
-
-# solar and wind resources
-min_wind_speed: 0
-max_wind_speed: 15
-
-min_solar_production: 0
-max_solar_production: 5000
-
-# inclusion filter
-# EITHER use substations OR transmission (meters)
-substations_inclusion_buffer: 10000
-transmission_inclusion_buffer: 10000
-
-# area filter
-min_pixels_connected: 5
-min_pixels_x: # currently not working, use min_pixels_connected instead
-min_pixels_y: # currently not working, use min_pixels_connected instead
 
 # model areas 
 model_areas_filename:
 
 
 #--advanced details----------------------------------------------------------------------
-# solar data
-measure: LTAym_YearlyMonthlyTotals
 
 force_osm_download: 1 #if set to 1, OSM data will be downloaded even if it is already present in the folder
 
@@ -183,13 +137,11 @@ wdpa_consider_status: ["Adopted", "Designated", "Established", "Inscribed"] #all
 #--Weather and energy data assumptions-------------------------------------------------------------
 weather_data_path: Raw_Spatial_Data 
 
-weather_year: '1990' # [str(y) for y in range(1990,2020)]
+weather_year: 1990 #[str(y) for y in range(1990,2020)]
 
 # Technology data
 tech: #"HeatDemand"
 tech_derate: 0.95
-solarpanel: CSi
-windturbine_onshore: 'LW_farm.yaml'
 
 # Heat demand
 heat_demand_start_day: "01-10" #start day of heat demand profile, format: DD-MM
@@ -200,29 +152,99 @@ heat_demand_threshold: 15 # threshold for heat demand profile, in degrees Celsiu
 
 #--Suitability cost assumptions----------------------------------------------------------------------
 
-# Minimum area for resource grades
-min_area_rg: 100 # in km²
+# Minimum area for resource grades (% of total available land area)
+min_area_rg: 0.05
 
-# Cost tiers (Money)
+# Cost tiers
 tiers: {
-    'Tier1': [0, 0.5e6],
-    'Tier2': [0.5e6, 1e6],
-    'Tier3': [1e6, 2e6]
+    'Tier1': [0.5, 1.00],
+    'Tier2': [1.00, 1.50],
+    'Tier3': [1.50, 2.00],
+    'Tier4': [2.00, 2.50],
+    'Tier5': [2.50, 100],
     }
 
-# Substation distance cost factor (Money/km)
-sub_dist_cost_factor: 10
-# Road distance cost factor (Money/km)
-road_dist_cost_factor: 1
+# Substation distance (meters)
+average_sub_dist: {
+    'onshorewind': 5000,
+    'solar': 5000
+}
 
-# Terrain cost (cost factor per terrain type range)
-terrain_ruggedness_ranges:
+# Terrain modifier (terrain types defined by ruggedness ranges)
+terrain_modifier:
 # Plains
   - range: [0, 150]
-    cost: 0.5
+    cost: {
+        'onshorewind': 1.02,
+        'solar': 0.99
+    }
 # Hills
   - range: [150, 450]
-    cost: 1
+    cost: {
+        'onshorewind': 1.07,
+        'solar': 1.04
+    }
 # Mountains
   - range: [450, 10000]
-    cost: 2
+    cost: {
+        'onshorewind': 1.17,
+        'solar': 1.09
+    }
+
+landcover_modifier: {
+    60: { # Bare / sparse vegetation
+        'onshorewind': 0.74,
+        'solar': 0.85
+    }
+}
+
+# Region modifier (regional multipliers for wind and solar resources)
+region_modifier: {
+    'Anhui': {'onshorewind': 1.01, 'solar': 1.03},
+    'Beijing': {'onshorewind': 0.98, 'solar': 0.99},
+    'Chongqing': {'onshorewind': 1.01, 'solar': 1.01},
+    'Fujian': {'onshorewind': 1.01, 'solar': 1.03},
+    'Gansu': {'onshorewind': 0.93, 'solar': 0.91},
+    'Guangdong': {'onshorewind': 1.03, 'solar': 1.04},
+    'Guangxi': {'onshorewind': 1.03, 'solar': 1.04},
+    'Guizhou': {'onshorewind': 1.03, 'solar': 1.04},
+    'Hainan': {'onshorewind': 1.03, 'solar': 1.04},
+    'Hebei': {'onshorewind': 0.98, 'solar': 0.99},
+    'Heilongjiang': {'onshorewind': 0.98, 'solar': 0.94},
+    'Henan': {'onshorewind': 1.01, 'solar': 1.01},
+    'Hubei': {'onshorewind': 1.01, 'solar': 1.01},
+    'Hunan': {'onshorewind': 1.01, 'solar': 1.01},
+    'NeiMongol': {'onshorewind': 0.98, 'solar': 0.99},
+    'Jiangsu': {'onshorewind': 1.01, 'solar': 1.03},
+    'Jiangxi': {'onshorewind': 1.01, 'solar': 1.01},
+    'Jilin': {'onshorewind': 0.98, 'solar': 0.94},
+    'Liaoning': {'onshorewind': 0.98, 'solar': 0.94},
+    'Ningxia': {'onshorewind': 0.93, 'solar': 0.91},
+    'Qinghai': {'onshorewind': 0.93, 'solar': 0.91},
+    'Shaanxi': {'onshorewind': 0.93, 'solar': 0.91},
+    'Shandong': {'onshorewind': 0.98, 'solar': 0.99},
+    'Shanghai': {'onshorewind': 1.01, 'solar': 1.03},
+    'Shanxi': {'onshorewind': 0.98, 'solar': 0.99},
+    'Sichuan': {'onshorewind': 1.01, 'solar': 1.01},
+    'Tianjin': {'onshorewind': 0.98, 'solar': 0.99},
+    'Xinjiang': {'onshorewind': 0.93, 'solar': 0.91},
+    'Xizang': {'onshorewind': 0.93, 'solar': 0.91},
+    'Yunnan': {'onshorewind': 1.03, 'solar': 1.04},
+    'Zhejiang': {'onshorewind': 1.01, 'solar': 1.03}
+}
+
+# Weight of individual modifiers in the final suitability weight (% of investment cost the component affects)
+modifier_weights: {
+    'terrain': {
+        'onshorewind': 1,
+        'solar': 1
+    },
+    substation_distance: {
+        'onshorewind': 0.1,
+        'solar': 0.1
+    },
+    region': {
+        'onshorewind': 1,
+        'solar': 1
+    },
+}
