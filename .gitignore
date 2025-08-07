@@ -28,6 +28,9 @@
 !Raw_Spatial_Data/additional_exclusion_polygons/.gitkeep
 !Raw_Spatial_Data/global_solar_wind_atlas
 !Raw_Spatial_Data/global_solar_wind_atlas/.gitkeep
+!weather_data
+!weather_data/create_cutout.py
+!weather_data/wind_speed_regions.ipynb
 !technologies
 !technologies/HW_farm.yaml
 !technologies/LW_farm.yaml
