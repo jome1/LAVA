@@ -9,6 +9,7 @@ import argparse
 import geopandas as gpd
 from rasterio.plot import show  
 from atlite.gis import shape_availability
+from atlite.gis import shape_availability_reprojected
 import rasterio
 import yaml
 from utils.data_preprocessing import clean_region_name
@@ -353,10 +354,17 @@ print('\nfollowing data was not selected in config:')
 for item in info_list_not_selected:
     print('- ', item)
 
+# test
+with rasterio.open(landcoverPath, 'r+') as src:
+    transform_lc = src.transform  # Only works in 'r+' or 'w' modes
+    height = src.height
+    width = src.width
+    shape = (height, width)
 
 # calculate available areas
 print('\nperforming exclusions...')
-masked, transform = shape_availability(region.geometry, excluder)
+#masked, transform = shape_availability(region.geometry, excluder)
+masked, transform = shape_availability_reprojected(region.geometry, excluder, dst_transform=transform_lc, dst_crs=local_crs_obj, dst_shape=shape)
 
 available_area = masked.sum() * excluder.res**2
 eligible_share = available_area / region.geometry.item().area
