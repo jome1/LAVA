@@ -304,7 +304,7 @@ eligible_share = available_area / region.geometry.item().area
 
 # print results
 print(f"\nThe eligibility share is: {eligible_share:.2%}")
-print(f'The available area is: {available_area:.2} km²')
+print(f'The available area is: {available_area:.2f} km²')
 if tech_config['deployment_density']:
     power_potential = available_area*1e-6 * tech_config['deployment_density']
     print(f'Power potential: {power_potential:.2} MW')
@@ -406,10 +406,11 @@ with open(os.path.join(output_dir, f"{region_name}_{scenario}_{technology}_exclu
     for item in info_list_exclusion:
         file.write(f"{item}\n")
     file.write(f"\neligibility share: {eligible_share:.2%}")
-    file.write(f"\navailable area: {available_area:.2} m2")
+    file.write(f"\navailable area: {available_area:.2f} m2")
     file.write(f"\npower potential: {power_potential:.2} MW")
 
     if config['model_areas_filename']:
         # Write table from GeoDataFrame subset
         file.write("\n\nResults for model areas:\n")
+
         file.write(subset.to_string(index=False))
