@@ -237,12 +237,17 @@ if railways==1 and tech_config['railways_buffer'] is not None:
     info_list_exclusion.append(f"railways buffer: {tech_config['railways_buffer']}")
 else: print('Railways file not found or not selected in config.')
 
-if roads==1 and tech_config['roads_buffer'] is not None: 
+if roads==1 and tech_config['roads_buffer'] is not None:
     excluder.add_geometry(roadsPath, buffer=tech_config['roads_buffer'])
     info_list_exclusion.append(f"roads buffer: {tech_config['roads_buffer']}")
 else: print('Roads file not found or not selected in config.')
 
-if airports==1 and tech_config['airports_buffer'] is not None: 
+if roads==1 and tech_config['roads_inclusion_buffer'] is not None:
+    excluder.add_geometry(roadsPath, buffer=tech_config['roads_inclusion_buffer'], invert=True)
+    info_list_exclusion.append(f"roads inclusion buffer: {tech_config['roads_inclusion_buffer']}")
+else: print('Roads file not found or not selected in config.')
+
+if airports==1 and tech_config['airports_buffer'] is not None:
     excluder.add_geometry(airportsPath, buffer=tech_config['airports_buffer'])
     info_list_exclusion.append(f"airports buffer: {tech_config['airports_buffer']}")
 else: print('Airports file not found or not selected in config.')

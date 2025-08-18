@@ -58,6 +58,7 @@ max_solar_production: 3000
 # EITHER use substations OR transmission (meters)
 substations_inclusion_buffer: 50000
 transmission_inclusion_buffer: 50000
+roads_inclusion_buffer: null
 
 # area filter
 min_pixels_connected: 5

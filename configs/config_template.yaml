@@ -134,6 +134,12 @@ Z: 50
 # world database of protected areas
 wdpa_consider_status: ["Adopted", "Designated", "Established", "Inscribed"] #all possibilies: "Adopted", "Designated", "Established", "Inscribed", "Proposed"
 
+# inclusion filter
+# EITHER use substations OR transmission (meters)
+substations_inclusion_buffer: 50000
+transmission_inclusion_buffer: 50000
+roads_inclusion_buffer: null
+
 
 #--Weather and energy data assumptions-------------------------------------------------------------
 weather_data_path: Raw_Spatial_Data 
