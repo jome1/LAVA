@@ -12,7 +12,7 @@ from atlite.gis import shape_availability
 from atlite.gis import shape_availability_reprojected
 import rasterio
 import yaml
-from utils.data_preprocessing import clean_region_name
+from utils.data_preprocessing import clean_region_name, log_scenario_run
 from rasterstats import zonal_stats
 
 dirname = os.getcwd() 
@@ -56,8 +56,9 @@ with open(tech_config_file, "r", encoding="utf-8") as f:
 resampled = '' #'_resampled' 
 
 # construct folder paths
-dirname = os.getcwd() 
+dirname = os.getcwd()
 data_path = os.path.join(dirname, 'data', region_name_clean)
+log_scenario_run(region_name_clean, technology, scenario, log_dir=data_path)
 data_path_OSM = os.path.join(dirname, 'data', region_name_clean, 'OSM_Infrastructure')
 data_from_DEM = os.path.join(data_path, 'derived_from_DEM')
 OSM_source = config['OSM_source']
