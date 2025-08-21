@@ -86,7 +86,7 @@ def aggregate_available_land(root: Path, output: Path) -> None:
     for (tech, scen), paths in groups.items():
         data, transform, nodata, crs = _merge_rasters(paths)
         gdf = _array_to_gdf(data, transform, nodata, crs)
-        merged_geom = gdf.unary_union
+        merged_geom = unary_union(gdf.geometry)
         gdf = gpd.GeoDataFrame(
             {"technology": [tech], "scenario": [scen], "geometry": [merged_geom]},
             crs=crs,
