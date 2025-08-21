@@ -8,7 +8,7 @@ resolution_manual: null
 
 #landcover codes (buffer in meters) (here landcover codes for openeo as default example)
 landcover_codes: #dictionary of landcover code with corresponding buffer in meters
-  50: 1000
+  50: 3000
   10: 1000
   40: 1000
   70: 1000

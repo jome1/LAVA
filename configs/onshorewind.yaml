@@ -36,7 +36,7 @@ landcover_codes: #dictionary of landcover code with corresponding buffer in mete
 
 # DEM
 max_elevation: 3500 #meters
-max_slope: 20 #degrees
+max_slope: 30 #degrees
 max_terrain_ruggedness: 5000 #Terrain Ruggedness Index (m); maximum allowable terrain ruggedness
 
 # spatial elements (buffer in meters)

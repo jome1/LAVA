@@ -86,7 +86,7 @@ demRasterPath = os.path.join(data_path, f'DEM_{region_name_clean}_{global_crs_ta
 dem = 1 if os.path.isfile(demRasterPath) else 0
 slopeRasterPath = os.path.join(data_from_DEM, f'slope_{region_name_clean}_{global_crs_tag}{resampled}.tif')
 slope = 1 if os.path.isfile(slopeRasterPath) else 0
-terrain_ruggedness_path = os.path.join(data_from_DEM, f'terrain_ruggedness_{region_name_clean}_{global_crs_tag}{resampled}.tif')
+terrain_ruggedness_path = os.path.join(data_path, f'terrain_ruggedness_{region_name_clean}_{local_crs_tag}.tif')
 terrain_ruggedness = 1 if os.path.isfile(terrain_ruggedness_path) else 0
 windRasterPath = os.path.join(data_path, f'wind_{region_name_clean}_{global_crs_tag}{resampled}.tif')
 wind = 1 if os.path.isfile(windRasterPath) else 0
@@ -98,8 +98,6 @@ region = gpd.read_file(regionPath)
 
 northfacingRasterPath = os.path.join(data_from_DEM, f'north_facing_{region_name_clean}_{global_crs_tag}{resampled}.tif')
 nfacing = 1 if os.path.isfile(northfacingRasterPath) else 0
-terrainRuggednessPath = os.path.join(data_from_DEM, f'TerrainRuggednessIndex_{region_name_clean}_{global_crs_tag}.tif')
-terrainRuggedness = 1 if os.path.isfile(terrainRuggednessPath) else 0
 coastlinesPath = os.path.join(data_path, f'goas_{region_name_clean}_{global_crs_tag}.gpkg')
 coastlines = 1 if os.path.isfile(coastlinesPath) else 0
 protectedAreasPath = os.path.join(data_path, f"protected_areas_{config['protected_areas_source']}_{region_name_clean}_{global_crs_tag}.gpkg")
@@ -502,3 +500,27 @@ with open(os.path.join(output_dir, f"{region_name_clean}_{scenario}_{technology}
         # Write table from GeoDataFrame subset
         file.write("\n\nResults for model areas:\n")
         file.write(subset.to_string(index=False))
+
+# save info in JSON file for easier retrieval
+info_data = {
+    "technology": technology,
+    "scenario": scenario,
+    "min_pixels_connected": min_pixels_connected,
+    "info_list": info_list_exclusion,
+    "eligibility_share": eligible_share,
+    "available_area_m2": available_area,
+    "power_potential_MW": power_potential,
+}
+
+if config['model_areas_filename']:
+    # Include summary table from GeoDataFrame subset
+    info_data["model_areas"] = subset.to_dict(orient="records")
+
+with open(
+    os.path.join(
+        output_dir,
+        f"{region_name_clean}_{scenario}_{technology}_exclusion_info.json",
+    ),
+    "w",
+) as file:
+    json.dump(info_data, file, indent=2)
