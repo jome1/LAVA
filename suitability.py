@@ -43,6 +43,7 @@ args = parser.parse_args()
 if args.region:
     region_folder_name = args.region
     region_name = args.region
+    #scenario = args.scenario ----TO DO: add scenario override
     print(f"\nRegion name and folder name overridden from command line to: {region_name}")
 else:
     print("No command line region provided, using values from config.")
@@ -152,11 +153,11 @@ region_factor_solar = config["region_modifier"][region_name]['solar'] - 1
 costmap_onshorewind = (1 + terrain_factor_onshorewind * config["modifier_weights"]["terrain"]["onshorewind"]) * (1 + substation_factor_onshorewind * config["modifier_weights"]["substation_distance"]["onshorewind"]) * (1 + region_factor_onshorewind * config["modifier_weights"]["region"]["onshorewind"])
 costmap_solar = (1 + terrain_factor_solar * config["modifier_weights"]["terrain"]["solar"]) * (1 + substation_factor_solar * config["modifier_weights"]["substation_distance"]["solar"]) * (1 + region_factor_solar * config["modifier_weights"]["region"]["solar"])
 
-costmap_onshorewind[land_cover_reproj == 0] = np.nan
-costmap_solar[land_cover_reproj == 0] = np.nan
-
 export_raster(costmap_onshorewind, os.path.join(output_path, f'costmap_onshorewind_{region_name}_{local_crs_tag}.tif'), ref, local_crs_obj)
 export_raster(costmap_solar, os.path.join(output_path, f'costmap_solar_{region_name}_{local_crs_tag}.tif'), ref, local_crs_obj)
+
+export_raster(costmap_onshorewind*wind_avail_reproj, os.path.join(output_path, f'costmap_onshorewind_available_{region_name}_{local_crs_tag}.tif'), ref, local_crs_obj)
+export_raster(costmap_solar*solar_avail_reproj, os.path.join(output_path, f'costmap_solar_available_{region_name}_{local_crs_tag}.tif'), ref, local_crs_obj)
 
 
 # Resource grades
