@@ -9,12 +9,12 @@ resolution_manual: null
 #landcover codes (buffer in meters) (here landcover codes for openeo as default example)
 landcover_codes: #dictionary of landcover code with corresponding buffer in meters
   50: 3000
-  10: 1000
   40: 1000
   70: 1000
   80: 1000
   90: 1000
   95: 1000
+  #10: 1000
 
 
 #landcover codes (buffer in meters) (here landcover codes for openeo as default example)
@@ -37,7 +37,7 @@ landcover_codes: #dictionary of landcover code with corresponding buffer in mete
 # DEM
 max_elevation: 4000 #meters
 max_slope: 20 #degrees
-max_terrain_ruggedness: 1500 #terrain ruggedness index
+max_terrain_ruggedness: null #terrain ruggedness index
 
 # spatial elements (buffer in meters)
 railways_buffer: 1000
@@ -65,7 +65,7 @@ transmission_inclusion_buffer: null
 roads_inclusion_buffer: 10000
 
 # area filter
-min_pixels_connected: 1
+min_pixels_connected: 5
 min_pixels_x: # currently not working, use min_pixels_connected instead
 min_pixels_y: # currently not working, use min_pixels_connected instead
 
