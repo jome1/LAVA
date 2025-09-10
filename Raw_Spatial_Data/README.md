@@ -1,3 +1,5 @@
+licenses of data sources used as default in LAVA-tool
+
 | source              | license                                                                 | details                                                                 |
 |---------------------|-------------------------------------------------------------------------|-------------------------------------------------------------------------|
 | OSM                 | Open Data Commons Open Database License (ODbL)                         | <https://www.openstreetmap.org/copyright>                               |
