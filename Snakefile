@@ -13,8 +13,8 @@ def logpath(region, filename):
 #define parameters
 regions = ["Anhui", "Beijing", "Chongqing", "Fujian", "Gansu", "Guangdong", "Guangxi", "Guizhou",
           "Hainan", "Hebei", "Heilongjiang", "Henan", "Hubei", "Hunan", "Jiangsu","Jiangxi",
-          "Jilin", "Liaoning", "NeiMongol", "NingxiaHui", "Qinghai", "Shaanxi", "Shandong", "Shanghai",
-          "Shanxi", "Sichuan", "Tianjin", "XinjiangUygur", "Xizang", "Yunnan", "Zhejiang"]
+          "Jilin", "Liaoning", "West-InnerMongolia", "East-InnerMongolia", "Ningxia", "Qinghai", "Shaanxi", "Shandong", "Shanghai",
+          "Shanxi", "Sichuan", "Tianjin", "Xinjiang", "Xizang", "Yunnan", "Zhejiang"]
 technologies = ["solar", "onshorewind"]
 weather_years = [str(y) for y in range(2010, 2011)]
 scenario= "noInclusion"

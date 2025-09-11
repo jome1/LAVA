@@ -157,13 +157,17 @@ tiers: {
     'Tier2': [1.00, 1.25],
     'Tier3': [1.25, 1.50],
     'Tier4': [1.50, 2.00],
-    'Tier5': [2.00, 1000],
+    'Tier5': [2.00, np.inf],
     }
 
 # Substation distance (meters)
 average_sub_dist: {
-    'onshorewind': 10000,
-    'solar': 10000
+    'North': { 'onshorewind': 50, 'solar': 50},
+    'East': { 'onshorewind': 25, 'solar': 25},
+    'Central': { 'onshorewind': 25, 'solar': 25},
+    'Northeast': { 'onshorewind': 50, 'solar': 50},
+    'Northwest': { 'onshorewind': 50, 'solar': 50},
+    'South': { 'onshorewind': 25, 'solar': 25},
 }
 
 # Terrain modifier (terrain types defined by ruggedness ranges)
@@ -171,63 +175,73 @@ terrain_modifier:
 # Plains
   - range: [0, 150]
     cost: {
-        'onshorewind': 1.02,
-        'solar': 0.99
+        'onshorewind': 1.000,
+        'solar': 1.000
     }
 # Hills
   - range: [150, 450]
     cost: {
-        'onshorewind': 1.07,
-        'solar': 1.04
+        'onshorewind': 1.045,
+        'solar': 1.049
     }
 # Mountains
-  - range: [450, 10000]
+  - range: [450, 3000]
     cost: {
-        'onshorewind': 1.17,
-        'solar': 1.09
+        'onshorewind': 1.145,
+        'solar': 1.097
     }
 
 landcover_modifier: {
     60: { # Bare / sparse vegetation
-        'onshorewind': 0.74,
-        'solar': 0.85
+        'onshorewind': 0.719,
+        'solar': 0.852
     }
 }
 
-# Region modifier (regional multipliers for wind and solar resources)
 region_modifier: {
-    'Anhui': {'onshorewind': 1.01, 'solar': 1.03},
-    'Beijing': {'onshorewind': 0.98, 'solar': 0.99},
-    'Chongqing': {'onshorewind': 1.01, 'solar': 1.01},
-    'Fujian': {'onshorewind': 1.01, 'solar': 1.03},
-    'Gansu': {'onshorewind': 0.93, 'solar': 0.91},
-    'Guangdong': {'onshorewind': 1.03, 'solar': 1.04},
-    'Guangxi': {'onshorewind': 1.03, 'solar': 1.04},
-    'Guizhou': {'onshorewind': 1.03, 'solar': 1.04},
-    'Hainan': {'onshorewind': 1.03, 'solar': 1.04},
-    'Hebei': {'onshorewind': 0.98, 'solar': 0.99},
-    'Heilongjiang': {'onshorewind': 0.98, 'solar': 0.94},
-    'Henan': {'onshorewind': 1.01, 'solar': 1.01},
-    'Hubei': {'onshorewind': 1.01, 'solar': 1.01},
-    'Hunan': {'onshorewind': 1.01, 'solar': 1.01},
-    'NeiMongol': {'onshorewind': 0.98, 'solar': 0.99},
-    'Jiangsu': {'onshorewind': 1.01, 'solar': 1.03},
-    'Jiangxi': {'onshorewind': 1.01, 'solar': 1.01},
-    'Jilin': {'onshorewind': 0.98, 'solar': 0.94},
-    'Liaoning': {'onshorewind': 0.98, 'solar': 0.94},
-    'NingxiaHui': {'onshorewind': 0.93, 'solar': 0.91},
-    'Qinghai': {'onshorewind': 0.93, 'solar': 0.91},
-    'Shaanxi': {'onshorewind': 0.93, 'solar': 0.91},
-    'Shandong': {'onshorewind': 0.98, 'solar': 0.99},
-    'Shanghai': {'onshorewind': 1.01, 'solar': 1.03},
-    'Shanxi': {'onshorewind': 0.98, 'solar': 0.99},
-    'Sichuan': {'onshorewind': 1.01, 'solar': 1.01},
-    'Tianjin': {'onshorewind': 0.98, 'solar': 0.99},
-    'XinjiangUygur': {'onshorewind': 0.93, 'solar': 0.91},
-    'Xizang': {'onshorewind': 0.93, 'solar': 0.91},
-    'Yunnan': {'onshorewind': 1.03, 'solar': 1.04},
-    'Zhejiang': {'onshorewind': 1.01, 'solar': 1.03}
+    'North': { 'onshorewind': 1.055, 'solar': 1.083},
+    'East': { 'onshorewind': 1.090, 'solar': 1.125}, 
+    'Central': { 'onshorewind': 1.084, 'solar': 1.111}, 
+    'Northeast': { 'onshorewind': 1.054, 'solar': 1.028}, 
+    'Northwest': { 'onshorewind': 1.000, 'solar': 1.000}, 
+    'South': { 'onshorewind': 1.122, 'solar': 1.160},
 }
+
+region_set: { 
+    'Anhui': 'East',
+    'Beijing': 'North',
+    'Chongqing': 'Central',
+    'East-InnerMongolia': 'Northeast',
+    'Fujian': 'East',
+    'Gansu': 'Northwest',
+    'Guangdong': 'South',
+    'Guangxi': 'South',
+    'Guizhou': 'South',
+    'Hainan': 'South',
+    'Hebei': 'North',
+    'Heilongjiang': 'Northeast',
+    'Henan': 'Central',
+    'Hubei': 'Central',
+    'Hunan': 'Central',
+    'Jiangsu': 'East',
+    'Jiangxi': 'Central',
+    'Jilin': 'Northeast',
+    'Liaoning': 'Northeast',
+    'Ningxia': 'Northwest',
+    'Qinghai': 'Northwest',
+    'Shaanxi': 'Northwest',
+    'Shandong': 'North',
+    'Shanghai': 'East',
+    'Shanxi': 'North',
+    'Sichuan': 'Central',
+    'Tianjin': 'North',
+    'West-InnerMongolia': 'North',
+    'Xinjiang': 'Northwest',
+    'Xizang': 'Northwest',
+    'Yunnan': 'South',
+    'Zhejiang': 'East'
+}
+
 
 # Weight of individual modifiers in the final suitability weight (% of investment cost the component affects)
 modifier_weights: {
