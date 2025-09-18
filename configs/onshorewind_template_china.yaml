@@ -37,7 +37,8 @@ landcover_codes: #dictionary of landcover code with corresponding buffer in mete
 # DEM
 max_elevation: 4000 #meters
 max_slope: 20 #degrees
-max_terrain_ruggedness: null #terrain ruggedness index
+max_terrain_ruggedness: 1500 #terrain ruggedness index
+max_forest_density: null # (0–10 % = non‑forest/scrub, 10–40 % = sparse woodland, 40–70 % = moderately dense forest, >70 % = dense forest).
 
 # spatial elements (buffer in meters)
 railways_buffer: 1000

@@ -62,6 +62,7 @@ log_scenario_run(region_name_clean, technology, scenario, log_dir=data_path)
 data_path_OSM = os.path.join(dirname, 'data', region_name_clean, 'OSM_Infrastructure')
 data_from_DEM = os.path.join(data_path, 'derived_from_DEM')
 OSM_source = config['OSM_source']
+raw_data_path = os.path.join(dirname, 'Raw_Spatial_Data')
 
 # Load the CRS
 # geo CRS
@@ -87,7 +88,7 @@ demRasterPath = os.path.join(data_path, f'DEM_{region_name_clean}_{global_crs_ta
 dem = 1 if os.path.isfile(demRasterPath) else 0
 slopeRasterPath = os.path.join(data_from_DEM, f'slope_{region_name_clean}_{global_crs_tag}{resampled}.tif')
 slope = 1 if os.path.isfile(slopeRasterPath) else 0
-terrain_ruggedness_path = os.path.join(data_path, f'TerrainRuggednessIndex_{region_name_clean}_{global_crs_tag}.tif')
+terrain_ruggedness_path = os.path.join(data_from_DEM, f'TerrainRuggednessIndex_{region_name_clean}_{local_crs_tag}.tif')
 terrain_ruggedness = 1 if os.path.isfile(terrain_ruggedness_path) else 0
 windRasterPath = os.path.join(data_path, f'wind_{region_name_clean}_{global_crs_tag}{resampled}.tif')
 wind = 1 if os.path.isfile(windRasterPath) else 0
@@ -103,6 +104,8 @@ coastlinesPath = os.path.join(data_path, f'goas_{region_name_clean}_{global_crs_
 coastlines = 1 if os.path.isfile(coastlinesPath) else 0
 protectedAreasPath = os.path.join(data_path, f"protected_areas_{config['protected_areas_source']}_{region_name_clean}_{global_crs_tag}.gpkg")
 protectedAreas = 1 if os.path.isfile(protectedAreasPath) else 0
+forestDensityPath = os.path.join(data_path, f'forest_density_{region_name_clean}_{global_crs_tag}.tif')
+forestDensity = 1 if os.path.isfile(forestDensityPath) else 0
 
 # OSM
 roadsPath = os.path.join(data_path_OSM, f'{OSM_source}_roads.gpkg')
@@ -302,6 +305,14 @@ if protectedAreas == 1 and param is not None:
     info_list_exclusion.append(f"protected areas buffer: {param}")
 elif protectedAreas == 1 and param is None: info_list_not_selected.append("protectedAreas")
 elif protectedAreas == 0: info_list_not_available.append("protectedAreas")
+
+# Forest Density (optional; raster threshold like terrain ruggedness)
+param = tech_config.get('max_forest_density')
+if forestDensity == 1 and param is not None:
+    excluder.add_raster(forestDensityPath, codes=range(0,param), invert=True, crs=global_crs_obj)
+    info_list_exclusion.append(f"max forest density included: {param}")
+elif forestDensity == 1 and param is None: info_list_not_selected.append("forestDensity")
+elif forestDensity == 0: info_list_not_available.append("forestDensity")
 
 # Transmission Lines
 param = tech_config['transmission_lines_buffer']

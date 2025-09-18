@@ -68,6 +68,7 @@ CRS_manual = config['CRS_manual']  #if None use empty string
 consider_protected_areas = config['protected_areas_source']
 wdpa_url = config['wdpa_url']
 OSM_source = config['OSM_source']  #either 'geofabrik' or 'overpass'
+consider_forest_density = config.get('forest_density', 0)
 
 #----------------------------
 study_region_name = config['study_region_name'] # this defines the folder where the data is saved and the prefix in the files. 
@@ -112,6 +113,7 @@ data_path = os.path.join(dirname, 'Raw_Spatial_Data')
 demRasterPath = os.path.join(data_path, 'DEM', DEM_filename)
 coastlinesFilePath = os.path.join(data_path, 'GOAS', 'goas.gpkg')
 protected_areas_folder = os.path.join(data_path, 'protected_areas')
+additional_rasters_folder = os.path.join(data_path, 'additional_exclusion_rasters')
 wind_solar_atlas_folder = os.path.join(data_path, 'global_solar_wind_atlas')
 if OSM_source == 'geofabrik':
     OSM_data_path = os.path.join(data_path, 'OSM', OSM_folder_name)
@@ -570,6 +572,30 @@ if consider_protected_areas == 'WDPA' or consider_protected_areas == 'file':
         print(f"Protected areas file already exists for region.")
 
 
+# forest density (optional; raster clipped/reprojected if filename is provided)
+if consider_forest_density == 1:
+    forest_density_filename = config.get('forest_density_filename', 0)
+    print('\nprocessing forest density (raster)')
+    raw_forest_density_path = os.path.join(data_path, 'landcover', forest_density_filename)
+    if not os.path.exists(raw_forest_density_path):
+        logging.warning(f"Forest density raster not found: {rel_path(raw_forest_density_path)}")
+    else:
+        # clip and reproject to local CRS
+        try:
+            clip_reproject_raster(
+                raw_forest_density_path,
+                region_name_clean,
+                region,
+                'forest_density',
+                local_crs_obj,
+                'nearest',
+                'int32',
+                output_dir
+            )
+        except Exception as e:
+            logging.warning(f"Failed to clip/reproject forest density raster: {e}")
+
+
 #global wind atlas
 if consider_wind_atlas == 1:
     print('\nprocessing global wind atlas')
@@ -614,5 +640,5 @@ if consider_solar_atlas == 1:
 print("\nDone!")
 
 elapsed = time.time() - start_time
-logging.info(f'elapsed seconds: {round(elapsed)}')
-print(elapsed)
+logging.info(f'elapsed seconds: {round(elapsed,2)}')
+print(f'elapsed time: {elapsed}')
