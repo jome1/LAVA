@@ -51,6 +51,10 @@ protected_areas_source: 0 #WDPA or file or 0
 wdpa_url: 
 protected_areas_filename:  #include file ending (.gpkg or .geojson), needs to be in EPSG4326
 
+# forest density (optional; raster in Raw_Spatial_Data/Additional_layers)
+forest_density_source: 0  # keep 0 to disable; set filename below to use
+forest_density_filename:  # raster filename (e.g. .tif) placed in Raw_Spatial_Data/Additional_layers
+
 # compute helper datasets
 compute_substation_proximity: 1
 compute_road_proximity: 1

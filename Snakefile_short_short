@@ -12,11 +12,11 @@ def logpath(region, filename):
 #define parameters
 regions = ["Anhui", "Beijing", "Chongqing", "Fujian", "Gansu", "Guangdong", "Guangxi", "Guizhou",
           "Hainan", "Hebei", "Heilongjiang", "Henan", "Hubei", "Hunan", "Jiangsu","Jiangxi",
-          "Jilin", "Liaoning", "NeiMongol", "NingxiaHui", "Qinghai", "Shaanxi", "Shandong", "Shanghai",
-          "Shanxi", "Sichuan", "Tianjin", "XinjiangUygur", "Xizang", "Yunnan", "Zhejiang"]
+          "Jilin", "Liaoning", "NeiMongol", "Ningxia", "Qinghai", "Shaanxi", "Shandong", "Shanghai",
+          "Shanxi", "Sichuan", "Tianjin", "Xinjiang", "Xizang", "Yunnan", "Zhejiang"]
 technologies = ["onshorewind"]
-scenario= "incForest"
-#regions=["Gansu","Qinghai","NeiMongol","NingxiaHui","XinjiangUygur","Xizang","Hebei","Shanxi","Shaanxi","Sichuan"]
+scenario= "incForest20Rugg1000"
+#regions=["Gansu","Qinghai","NeiMongol","Ningxia","Xinjiang","Xizang","Hebei","Shanxi","Shaanxi","Sichuan"]
 
 
 
