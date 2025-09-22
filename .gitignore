@@ -63,9 +63,6 @@
 !simple_results_analysis.py
 !snakefile_short
 !snakefile_short_short
-!templates/onshorewind_china.yaml
-!templates/solar_china.yaml
-!templates
 !bias_correction_factors
 !bias_correction_factors/ERA5_wnd100m_bias.nc
 !delete_available_land.py
