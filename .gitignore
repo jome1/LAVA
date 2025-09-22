@@ -57,6 +57,7 @@
 !utils/gadm_levels_to_geojson.py
 !utils/delete_available_land.py
 !utils/!simple_results_analysis.py
+!snakemake
 !snakemake/Snakefile
 !snakemake/snakefile_short
 !snakemake/snakefile_short_short
