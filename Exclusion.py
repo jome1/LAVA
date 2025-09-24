@@ -392,8 +392,8 @@ with rasterio.open(landcoverPath, 'r+') as src:
 
 # calculate available areas
 print('\nperforming exclusions...')
-#masked, transform = shape_availability(region.geometry, excluder)
-masked, transform = shape_availability_reprojected(region.geometry, excluder, dst_transform=transform_lc, dst_crs=local_crs_obj, dst_shape=shape)
+masked, transform = shape_availability(region.geometry, excluder)
+#masked, transform = shape_availability_reprojected(region.geometry, excluder, dst_transform=transform_lc, dst_crs=local_crs_obj, dst_shape=shape)
 
 available_area = masked.sum() * excluder.res**2
 eligible_share = available_area / region.geometry.item().area
