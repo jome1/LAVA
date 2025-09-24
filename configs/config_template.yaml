@@ -121,8 +121,8 @@ osm_features_config:
   generators: ["power", *generators, "node"]
   roads: ["highway", *roads, "way"]
   railways: ["railway", *railways, "way"]
-  airports: ["aeroway", *airports, "way"]
-  waterbodies: ["natural", *waterbodies, "way"]
+  airports: ["aeroway", *airports, ["way", "relation"]]
+  waterbodies: ["natural", *waterbodies, ["way", "relation"]]
   military: ["landuse", *military, "way"]
 
 
