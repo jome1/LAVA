@@ -14,6 +14,8 @@ import io
 import fiona
 import urllib.parse
 from pyproj import CRS
+import pandas as pd
+import rasterstats 
 
 import logging
 
@@ -96,7 +98,7 @@ def geopandas_clip_reproject(geopandas_file, gdf, target_crs_obj):
     return geopandas_clipped
 
 
-def clip_raster(input_raster_path, region_name_clean, gdf,output_dir):
+def clip_raster(input_raster_path, region_name_clean, gdf, output_dir, data_name=None):
     """
     Clips a raster to the geometry defined in a GeoDataFrame and saves the clipped raster.
 
@@ -130,8 +132,12 @@ def clip_raster(input_raster_path, region_name_clean, gdf,output_dir):
         ori_raster_crs = ori_raster_crs.replace(":", "")
         print(f'original raster CRS: {src.crs}')
         # Save the clipped raster as a new GeoTIFF file
-        with rasterio.open(os.path.join(output_dir, f'{filename}_{region_name_clean}_{ori_raster_crs}.tif'), 'w', **out_meta) as dest:
-            dest.write(out_image)
+        if data_name is None:
+            with rasterio.open(os.path.join(output_dir, f'{filename}_{region_name_clean}_{ori_raster_crs}.tif'), 'w', **out_meta) as dest:
+                dest.write(out_image)
+        else:
+            with rasterio.open(os.path.join(output_dir, f'{data_name}_{region_name_clean}_{ori_raster_crs}.tif'), 'w', **out_meta) as dest:
+                dest.write(out_image)
 
 
 
@@ -529,6 +535,42 @@ def clean_region_name(region_name: str) -> str:
     return region_name_clean
 
 
+def log_scenario_run(region: str, technology: str, scenario: str, log_dir: str = "logs") -> None:
+    """Append a record of a scenario run to a log file.
+
+    Parameters
+    ----------
+    region : str
+        Name of the region.
+    technology : str
+        Technology used for the run.
+    scenario : str
+        Scenario identifier.
+    log_dir : str, optional
+        Directory where the log file is stored, by default ``"logs"``.
+    """
+    os.makedirs(log_dir, exist_ok=True)
+    log_file = os.path.join(log_dir, "scenario_runs.log")
+
+    # Ensure the log file exists
+    if not os.path.exists(log_file):
+        with open(log_file, "w", encoding="utf-8"):
+            pass
+
+    # Read existing technology-scenario combinations
+    existing = set()
+    with open(log_file, "r", encoding="utf-8") as fh:
+        for line in fh:
+            parts = line.strip().split(",")
+            if len(parts) >= 3:
+                existing.add((parts[1], parts[2]))
+
+    # Append new entry only if combination is not present
+    if (technology, scenario) not in existing:
+        with open(log_file, "a", encoding="utf-8") as fh:
+            fh.write(f"{region},{technology},{scenario}\n")
+
+
 def rel_path(path: str) -> str:
     """
     Returns a relative path from a given path.
@@ -543,3 +585,16 @@ def rel_path(path: str) -> str:
         return os.path.relpath(path)
     except ValueError:
         return os.path.abspath(path)
+
+
+
+def landcover_stats_df(region_boundary, rasterFilePath, legend_dict, pixel_size):
+    stats = rasterstats.zonal_stats(region_boundary, rasterFilePath, categorical=True, category_map=legend_dict)
+    df = pd.DataFrame(stats)
+    df_long = df.melt(var_name='category', value_name='count')
+    df_long = df_long.groupby('category', as_index=False)['count'].sum()
+    category_to_code = {category: code for code, category in legend_dict.items()}
+    df_long['code'] = df_long['category'].map(category_to_code)
+    df_long['area_km2'] = round(df_long['count'] * pixel_size / 1e6, 0)
+    df_long = df_long[['category', 'code', 'count', 'area_km2']]
+    return df_long

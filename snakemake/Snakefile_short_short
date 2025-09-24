@@ -9,15 +9,16 @@ def logpath(region, filename):
 #with open(regions_filepath, "r") as f:
 #    regions= json.load(f)
 
-
 #define parameters
 regions = ["Anhui", "Beijing", "Chongqing", "Fujian", "Gansu", "Guangdong", "Guangxi", "Guizhou",
           "Hainan", "Hebei", "Heilongjiang", "Henan", "Hubei", "Hunan", "Jiangsu","Jiangxi",
-          "Jilin", "Liaoning", "NeiMongol", "NingxiaHui", "Qinghai", "Shaanxi", "Shandong", "Shanghai",
-          "Shanxi", "Sichuan", "Tianjin", "XinjiangUygur", "Xizang", "Yunnan", "Zhejiang"]
-technologies = ["solar", "onshorewind"]
-scenarios= "ref"
-# the region folder name is the same as the region name in the China case. 
+          "Jilin", "Liaoning", "NeiMongol", "Ningxia", "Qinghai", "Shaanxi", "Shandong", "Shanghai",
+          "Shanxi", "Sichuan", "Tianjin", "Xinjiang", "Xizang", "Yunnan", "Zhejiang"]
+technologies = ["onshorewind"]
+scenario= "incForest20Rugg1000"
+#regions=["Gansu","Qinghai","NeiMongol","Ningxia","Xinjiang","Xizang","Hebei","Shanxi","Shaanxi","Sichuan"]
+
+
 
 # Create directories for each region and snakemake log
 for r in regions:
@@ -28,14 +29,13 @@ The snakemake workflow will parallelize (--cores > 1) everything else but the sp
 The resources are limited to openeo cause the api is throwing problems with parallelization. 
     use thi line ---->  snakemake --cores 4 --resources openeo_req=1
 to use a specific Snakefile, use the --snakefile option
-    use thi line ----> snakemake --snakefile Snakefile_short --cores 4 --resources openeo_req=1
+    use this line ----> snakemake --snakefile snakemake/Snakefile_short_short --cores 4 --resources openeo_req=1
 """
 
 rule all:
     input:
         expand(logpath("{region}", "spatial_data_prep.done"), region=regions),
-        expand(logpath("{region}", "exclusion_{technology}.done"), region=regions, technology=technologies),
-        expand(logpath("{region}", "suitability.done"), region=regions)
+        expand(logpath("{region}", "exclusion_{technology}_{scenario}.done"), region=regions, technology=technologies, scenario=scenario),
 
 rule spatial_data_prep:
     output:
@@ -45,28 +45,18 @@ rule spatial_data_prep:
     params:
         method="snakemake"
     shell:
-        "python spatial_data_prep.py --region {wildcards.region} --region_folder_name {wildcards.region} --method {params.method}"
+        "python spatial_data_prep.py --region {wildcards.region} --method {params.method}"
 
 rule exclusion:
     input:
         logpath("{region}", "spatial_data_prep.done")
     output:
-        touch(logpath("{region}", "exclusion_{technology}.done"))
+        touch(logpath("{region}", "exclusion_{technology}_{scenario}.done"))
     params:
-        method="snakemake"
+        method="snakemake",
+        scenario=scenario 
     shell:
         (
-            "python Exclusion.py --region {wildcards.region} --region_folder_name {wildcards.region} "
-            "--technology {wildcards.technology} --method {params.method}"
+            "python Exclusion.py --region {wildcards.region} "
+            "--technology {wildcards.technology} --method {params.method} --scenario {params.scenario}"
         )
-
-rule suitability:
-    input:
-        expand(logpath("{region}", "exclusion_{technology}.done"), region=regions, technology=technologies)
-    output:
-        touch(logpath("{region}", "suitability.done"))
-    params:
-        method="snakemake"
-    shell:
-        "python suitability.py --region {wildcards.region} --region_folder_name {wildcards.region} --method {params.method}"
-

@@ -18,6 +18,7 @@ import richdem
 import xdem
 import logging
 import argparse
+import numpy as np
 from pyproj import CRS
 from utils.data_preprocessing import *
 from utils.local_OSM_shp_files import *
@@ -67,34 +68,34 @@ CRS_manual = config['CRS_manual']  #if None use empty string
 consider_protected_areas = config['protected_areas_source']
 wdpa_url = config['wdpa_url']
 OSM_source = config['OSM_source']  #either 'geofabrik' or 'overpass'
+consider_forest_density = config.get('forest_density', 0)
 
 #----------------------------
-############### Define study region ############### use geopackage from gadm.org to inspect in QGIS
-region_folder_name = config['region_folder_name']
+study_region_name = config['study_region_name'] # this defines the folder where the data is saved and the prefix in the files. 
+region_name_clean = clean_region_name(study_region_name) 
 OSM_folder_name = config['OSM_folder_name'] #usually same as country_code, only needed if OSM is to be considered
 DEM_filename = config['DEM_filename']
 
 #use GADM boundary
-region_name = config['region_name'] #if country is studied, then use country name
+gadm_region_name = config['GADM_region_name'] #if country is studied, then use country name
 country_code = config['country_code']  #3-digit ISO code  #PRT  #Städteregion Aachen in level 2 #Porto in level 1 #Elbe-Elster in level 2 #Zell am See in level 2
-gadm_level = config['gadm_level']
+gadm_level = config['GADM_level']
 #or use custom region
 custom_study_area_filename = config.get('custom_study_area_filename', None)
 
 #Initialize parser for command line arguments and define arguments
 parser = argparse.ArgumentParser()
-parser.add_argument("--region", default=region_name, help="region name")
-parser.add_argument("--region_folder_name", default=region_folder_name, help="region folder name")
+parser.add_argument("--region", default=region_name_clean, help="studyregion name")
 parser.add_argument("--method",default="manual", help="method to run the script, e.g., snakemake or manual")
 args = parser.parse_args()
 
 # If running via Snakemake, use the region name and folder name from command line arguments
 if args.method == "snakemake":
     region_name = args.region
-    region_folder_name = args.region_folder_name
-    print(f"Running via snakemake - measures: region={region_name}, region_folder_name={region_folder_name}")
+    region_name_clean = clean_region_name(region_name)  # Clean the region name for file naming
+    print(f"Running via snakemake - measures: region={region_name_clean}")
 else:
-    print(f"Running manually - measures: region={region_name}, region_folder_name={region_folder_name}")
+    print(f"Running manually - measures: region={region_name_clean}")
 
 ##################################################
 #north facing pixels
@@ -112,27 +113,23 @@ data_path = os.path.join(dirname, 'Raw_Spatial_Data')
 demRasterPath = os.path.join(data_path, 'DEM', DEM_filename)
 coastlinesFilePath = os.path.join(data_path, 'GOAS', 'goas.gpkg')
 protected_areas_folder = os.path.join(data_path, 'protected_areas')
+additional_rasters_folder = os.path.join(data_path, 'additional_exclusion_rasters')
 wind_solar_atlas_folder = os.path.join(data_path, 'global_solar_wind_atlas')
 if OSM_source == 'geofabrik':
     OSM_data_path = os.path.join(data_path, 'OSM', OSM_folder_name)
 
-
-
-# Get region name without accents, spaces, apostrophes, or periods for saving files
-region_name_clean = clean_region_name(region_name)
-
 # Define output directories
-output_dir = os.path.join(dirname, 'data', f'{region_folder_name}')
+output_dir = os.path.join(dirname, 'data', f'{region_name_clean}')
 os.makedirs(output_dir, exist_ok=True)
 
 # Set up logging
-logging.info(f'\nPrepping {region_name}...')
+logging.info(f'\nPrepping {region_name_clean}...')
 
 #get region boundary
 if custom_study_area_filename:
     #check if dynamic filename is used
     if "{region_name}" in custom_study_area_filename:
-        custom_study_area_filename = custom_study_area_filename.format(region_name=region_name)
+        custom_study_area_filename = custom_study_area_filename.format(region_name=region_name_clean)
     print(f"\nUsing custom study area filename: {custom_study_area_filename}")
     custom_study_area_filepath = os.path.join('Raw_Spatial_Data','custom_study_area', custom_study_area_filename)
     region = gpd.read_file(custom_study_area_filepath).dissolve() # Dissolve to ensure it's a single polygon
@@ -146,7 +143,7 @@ elif gadm_level==0:
     logging.info('using whole country as study area')
 else:
     gadm_data = pygadm.Items(admin=country_code, content_level=gadm_level)
-    region = gadm_data.loc[gadm_data[f'NAME_{gadm_level}']==region_name].copy()
+    region = gadm_data.loc[gadm_data[f'NAME_{gadm_level}']==gadm_region_name].copy()
     region.set_crs('epsg:4326', inplace=True) #pygadm lib extracts information from the GADM dataset as GeoPandas GeoDataFrame. GADM.org provides files in coordinate reference system is longitude/latitude and the WGS84 datum.
     logging.info('using admin area within country as study area')
 
@@ -182,7 +179,7 @@ with open(os.path.join(output_dir, f'{region_name_clean}_local_CRS.pkl'), 'wb') 
 region.to_crs(local_crs_obj, inplace=True) 
 region.to_file(os.path.join(output_dir, f'{region_name_clean}_{local_crs_tag}.geojson'), driver='GeoJSON', encoding='utf-8')
 # also have region polygon in equal-area Mollweide projection
-region_mollweide = region.to_crs(CRS.from_user_input('ESRI:54009')) 
+region_mollweide = region.to_crs(CRS.from_user_input('ESRI:54009'))
 
 # set global CRS EPSG:4326
 global_crs_obj = CRS.from_user_input('4326')
@@ -195,8 +192,10 @@ with open(os.path.join(output_dir, f'{region_name_clean}_global_CRS.pkl'), 'wb')
 #calculate bounding box with 1000m buffer (region needs to be in projected CRS so meters are the unit)
 region_copy = region
 region_copy['buffered']=region_copy.buffer(1000)
+region_buffered_4000 = region_copy.buffer(4000) #have DEM larger than study area to account for Ruggedness Index calculation (convert to 4326 below)
 # Convert buffered region back to EPSC 4326 to get bounding box latitude and longitude 
 region_buffered_4326 = region_copy.set_geometry('buffered').to_crs(global_crs_obj)
+region_buffered_4000 = region_buffered_4000.to_crs(global_crs_obj)
 bounding_box = region_buffered_4326['buffered'].total_bounds 
 logging.info(f"Bounding box in EPSG 4326: \nminx: {bounding_box[0]}, miny: {bounding_box[1]}, maxx: {bounding_box[2]}, maxy: {bounding_box[3]}")
 
@@ -468,11 +467,13 @@ if config['landcover_source'] == 'file':
 print('processing DEM') #block comment: SHIFT+ALT+A, multiple line comment: STRG+#
 try:
     clip_reproject_raster(demRasterPath, region_name_clean, region, 'DEM', local_crs_obj, 'nearest', 'int16', output_dir)
+    clip_reproject_raster(demRasterPath, region_name_clean, region_buffered_4000, 'DEM_buffered', local_crs_obj, 'nearest', 'int16', output_dir)
     dem_4326_Path = os.path.join(output_dir, f'DEM_{region_name_clean}_EPSG4326.tif')
+    dem_local_buffered_Path = os.path.join(output_dir, f'DEM_buffered_{region_name_clean}_{local_crs_tag}.tif') #for ruggedness index calculation
     #reproject and match resolution of DEM to landcover data (co-registration)
     dem_localCRS_Path=os.path.join(output_dir, f'DEM_{region_name_clean}_{local_crs_tag}.tif')
-    dem_resampled_Path=os.path.join(output_dir, f'DEM_{region_name_clean}_{local_crs_tag}_resampled.tif') 
-    co_register(dem_localCRS_Path, processed_landcover_filePath, 'nearest', dem_resampled_Path, dtype='int16')
+    # dem_resampled_Path=os.path.join(output_dir, f'DEM_{region_name_clean}_{local_crs_tag}_resampled.tif') 
+    # co_register(dem_localCRS_Path, processed_landcover_filePath, 'nearest', dem_resampled_Path, dtype='int16')
 
     #slope and aspect map
     # Define output directories
@@ -485,8 +486,8 @@ try:
     slope = richdem.TerrainAttribute(dem_file, attrib='slope_degrees')
     slopeFilePathLocalCRS = os.path.join(richdem_helper_dir, f'slope_{region_name_clean}_{local_crs_tag}.tif')
     save_richdem_file(slope, dem_localCRS_Path, slopeFilePathLocalCRS)
-    slope_co_registered_FilePath = os.path.join(richdem_helper_dir, f'slope_{region_name_clean}_{local_crs_tag}_resampled.tif')
-    co_register(slopeFilePathLocalCRS, processed_landcover_filePath, 'nearest', slope_co_registered_FilePath, dtype='int16')
+    # slope_co_registered_FilePath = os.path.join(richdem_helper_dir, f'slope_{region_name_clean}_{local_crs_tag}_resampled.tif')
+    # co_register(slopeFilePathLocalCRS, processed_landcover_filePath, 'nearest', slope_co_registered_FilePath, dtype='int16')
     #save in 4326: slope cannot be calculated from EPSG4326 because units get confused (https://github.com/r-barnes/richdem/issues/34)
     slopeFilePath4326 = os.path.join(richdem_helper_dir, f'slope_{region_name_clean}_EPSG4326.tif')
     reproject_raster(slopeFilePathLocalCRS, region_name_clean, 4326, 'nearest', 'int16', slopeFilePath4326)
@@ -497,8 +498,8 @@ try:
     aspect = richdem.TerrainAttribute(dem_file, attrib='aspect')
     aspectFilePathLocalCRS = os.path.join(richdem_helper_dir, f'aspect_{region_name_clean}_{local_crs_tag}.tif')
     save_richdem_file(aspect, dem_localCRS_Path, aspectFilePathLocalCRS)
-    aspect_co_registered_FilePath = os.path.join(richdem_helper_dir, f'aspect_{region_name_clean}_{local_crs_tag}_resampled.tif')
-    co_register(aspectFilePathLocalCRS, processed_landcover_filePath, 'nearest', aspect_co_registered_FilePath, dtype='int16')
+    # aspect_co_registered_FilePath = os.path.join(richdem_helper_dir, f'aspect_{region_name_clean}_{local_crs_tag}_resampled.tif')
+    # co_register(aspectFilePathLocalCRS, processed_landcover_filePath, 'nearest', aspect_co_registered_FilePath, dtype='int16')
     #save in 4326: not sure if aspect is calculated correctly in EPSG4326 because units might get confused (https://github.com/r-barnes/richdem/issues/34)
     aspectFilePath4326 = os.path.join(richdem_helper_dir, f'aspect_{region_name_clean}_EPSG4326.tif')
     reproject_raster(aspectFilePathLocalCRS, region_name_clean, 4326, 'nearest', 'int16', aspectFilePath4326)
@@ -506,14 +507,16 @@ try:
     #------------- Terrain Ruggedness Index -----------------
     if compute_terrain_ruggedness:
         print('\nprocessing Terrain Ruggedness Index')
-        tri_FilePath = os.path.join(output_dir, f'TerrainRuggednessIndex_{region_name_clean}_EPSG{EPSG}.tif')
-        if os.path.exists(tri_FilePath):
-            print(f"Terrain Ruggedness Index already exists at {rel_path(tri_FilePath)}. Skipping calculation.")
+        tri_local_path = os.path.join(richdem_helper_dir, f'TerrainRuggednessIndex_{region_name_clean}_{local_crs_tag}.tif')
+        tri_global_path = os.path.join(richdem_helper_dir, f'TerrainRuggednessIndex_{region_name_clean}_{global_crs_tag}.tif')
+        if os.path.exists(tri_local_path) and os.path.exists(tri_global_path):
+            print(f"Terrain Ruggedness Index already exists at {rel_path(tri_local_path)}. Skipping calculation.")
         else:
-            dem = xdem.DEM(dem_localCRS_Path)
+            dem = xdem.DEM(dem_local_buffered_Path)
             tri = dem.terrain_ruggedness_index(window_size=9)
-            tri_array = tri.data
-            tri.save(tri_FilePath)
+            tri.data = np.rint(tri.data).astype(np.int32)
+            tri.save(tri_local_path)
+            reproject_raster(tri_local_path, region_name_clean, 4326, 'nearest', 'float32', tri_global_path)
     
 
     # create map showing pixels with slope bigger X and aspect between Y and Z (north facing with slope where you would not build PV)
@@ -569,6 +572,21 @@ if consider_protected_areas == 'WDPA' or consider_protected_areas == 'file':
         print(f"Protected areas file already exists for region.")
 
 
+# forest density (optional; raster clipped/reprojected if filename is provided)
+if consider_forest_density == 1:
+    forest_density_filename = config.get('forest_density_filename', 0)
+    print('\nprocessing forest density (raster)')
+    raw_forest_density_path = os.path.join(data_path, 'landcover', forest_density_filename)
+    if not os.path.exists(raw_forest_density_path):
+        logging.warning(f"Forest density raster not found: {rel_path(raw_forest_density_path)}")
+    else:
+        # clip and reproject to local CRS
+        try:
+            clip_raster(raw_forest_density_path, region_name_clean, region, output_dir, 'forest_density')
+        except Exception as e:
+            logging.warning(f"Failed to clip/reproject forest density raster: {e}")
+
+
 #global wind atlas
 if consider_wind_atlas == 1:
     print('\nprocessing global wind atlas')
@@ -578,13 +596,15 @@ if consider_wind_atlas == 1:
         download_global_wind_atlas(country_code=country_code, height=100, data_path=data_path) #global wind atlas apparently uses 3 letter ISO code
     else:
         print(f"Global wind atlas data already downloaded: {rel_path(wind_raster_filePath)}")
-        
+
+    #clip raster
+    # clip_raster(wind_raster_filePath, region_name_clean, region, output_dir, 'wind')
     #clip and reproject to local CRS (also saves file which is only clipped but not reprojected)
     clip_reproject_raster(wind_raster_filePath, region_name_clean, region, 'wind', local_crs_obj, 'nearest', 'float32', output_dir)
     #co-register raster to land cover
-    wind_raster_clipped_reprojected_filePath = os.path.join(output_dir, f'wind_{region_name_clean}_{local_crs_tag}.tif')
-    wind_raster_co_registered_filePath = os.path.join(output_dir, f'wind_{region_name_clean}_{local_crs_tag}_resampled.tif')
-    co_register(wind_raster_clipped_reprojected_filePath, processed_landcover_filePath, 'nearest', wind_raster_co_registered_filePath, dtype='float32')
+    # wind_raster_clipped_reprojected_filePath = os.path.join(output_dir, f'wind_{region_name_clean}_{local_crs_tag}.tif')
+    # wind_raster_co_registered_filePath = os.path.join(output_dir, f'wind_{region_name_clean}_{local_crs_tag}_resampled.tif')
+    # co_register(wind_raster_clipped_reprojected_filePath, processed_landcover_filePath, 'nearest', wind_raster_co_registered_filePath, dtype='float32')
 
 
 
@@ -595,23 +615,25 @@ if consider_solar_atlas == 1:
     solar_atlas_folder_path = os.path.join(wind_solar_atlas_folder, f'{country_name_solar_atlas}_solar_atlas')
 
     if not os.path.exists(solar_atlas_folder_path):
-        solar_atlas_measure = config['measure']  
+        solar_atlas_measure = config['solar_atlas_measure']  
         solar_atlas_folder_name = download_global_solar_atlas(country_name=country_name_solar_atlas, data_path=data_path, measure = solar_atlas_measure)
     else:
         print(f"Global solar atlas data already downloaded: {rel_path(solar_atlas_folder_path)}")
     
     solar_raster_filePath = os.path.join(wind_solar_atlas_folder, solar_atlas_folder_path, os.listdir(solar_atlas_folder_path)[0], 'GHI.tif')
+    #clip raster
+    # clip_raster(solar_raster_filePath, region_name_clean, region, output_dir, 'solar')
     #clip and reproject to local CRS (also saves file which is only clipped but not reprojected)
     clip_reproject_raster(solar_raster_filePath, region_name_clean, region, 'solar', local_crs_obj, 'nearest', 'float32', output_dir)
     #co-register raster to land cover
-    solar_raster_clipped_reprojected_filePath = os.path.join(output_dir, f'solar_{region_name_clean}_{local_crs_tag}.tif')
-    solar_raster_co_registered_filePath = os.path.join(output_dir, f'solar_{region_name_clean}_{local_crs_tag}_resampled.tif')
-    co_register(solar_raster_clipped_reprojected_filePath, processed_landcover_filePath, 'nearest', solar_raster_co_registered_filePath, dtype='float32')
+    # solar_raster_clipped_reprojected_filePath = os.path.join(output_dir, f'solar_{region_name_clean}_{local_crs_tag}.tif')
+    # solar_raster_co_registered_filePath = os.path.join(output_dir, f'solar_{region_name_clean}_{local_crs_tag}_resampled.tif')
+    # co_register(solar_raster_clipped_reprojected_filePath, processed_landcover_filePath, 'nearest', solar_raster_co_registered_filePath, dtype='float32')
 
 
 
 print("\nDone!")
 
 elapsed = time.time() - start_time
-logging.info(f'elapsed seconds: {round(elapsed)}')
-print(elapsed)
+logging.info(f'elapsed seconds: {round(elapsed,2)}')
+print(f'elapsed time: {elapsed}')
