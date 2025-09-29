@@ -16,12 +16,8 @@ regions = ["Anhui", "Beijing", "Chongqing", "Fujian", "Gansu", "Guangdong", "Gua
           "Jilin", "Liaoning", "West-InnerMongolia", "East-InnerMongolia", "Ningxia", "Qinghai", "Shaanxi", "Shandong", "Shanghai",
           "Shanxi", "Sichuan", "Tianjin", "Xinjiang", "Xizang", "Yunnan", "Zhejiang"]
 technologies = ["solar", "onshorewind"]
-weather_years = [str(y) for y in range(2010, 2011)]
-scenario= "noInclusion"
-
-#short term fix for testing
-regions=["Beijing"]
-weather_years=1990
+weather_years = 2015 #[str(y) for y in range(2015, 2016)]
+scenario= "ref"
 
 # Create directories for each region and snakemake log
 for r in regions:
