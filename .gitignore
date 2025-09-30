@@ -67,3 +67,5 @@
 !docs/troubleshooting.rst
 !docs/usage.rst
 !docs/faq.rst
+!docs/.readthedocs.yaml
+
