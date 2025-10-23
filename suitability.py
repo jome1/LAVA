@@ -95,7 +95,7 @@ except FileNotFoundError:
     
 substation_distance_path = os.path.join(data_from_proximity, f'substation_distance.tif')
 landcover_path = os.path.join(data_path, f"landcover_{config['landcover_source']}_{region_name}_{local_crs_tag}.tif")
-terrain_ruggedness_path = os.path.join(data_path, f'TerrainRuggednessIndex_{region_name}_{local_crs_tag}.tif')
+terrain_ruggedness_path = os.path.join(data_path, 'derived_from_DEM', f'TerrainRuggednessIndex_{region_name}_{local_crs_tag}.tif')
 GWAPath = os.path.join(data_path, f'wind_{region_name}_{local_crs_tag}.tif')
 GSAPath = os.path.join(data_path, f'solar_{region_name}_{local_crs_tag}.tif')
 
