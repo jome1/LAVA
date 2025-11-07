@@ -7,7 +7,7 @@ technologies: ['onshorewind']
 
 #snakemake specific parameters
 cores: 4
-snakefile: snakemake/Snakefile_v2
+snakefile: snakemake/Snakefile
 weather_years: [2015] #[str(y) for y in range(2010, 2011)]
 
 stages:
