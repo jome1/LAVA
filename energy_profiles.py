@@ -1,11 +1,9 @@
 import atlite
-from atlite.gis import ExclusionContainer
 import numpy as np
 import xarray as xr
 import pandas as pd
 import matplotlib.pyplot as plt
 import geopandas as gpd
-from rasterio.plot import show
 import os
 import json
 from pathlib import Path
@@ -22,10 +20,9 @@ with open(os.path.join("configs/config.yaml"), "r", encoding="utf-8") as f:
 
 region_name = config['study_region_name']
 region_name = clean_region_name(region_name)
-technology=config["technology"]
+technology = config["technology"]
 scenario = config.get('scenario', 'ref') # scenario, e.g., 'ref' or 'high'
 weather_year = config["weather_year"]
-#print(f"Config parameters: region={region_name}, technology={technology}, weather_year={weather_year}")
 
 # override values via command line arguments through snakemake
 parser = argparse.ArgumentParser()
@@ -83,43 +80,74 @@ else:
 regionPath = os.path.join(data_path, f'{region_name}_{local_crs_tag}.geojson')
 region = gpd.read_file(regionPath)
 
-# Open json file with resource grades
-resource_grades_file = os.path.join(data_path, 'suitability', f'{region_name}_{technology}_relevant_resource_grades.json')
-with open(resource_grades_file, 'r') as f:
-    resource_grades = json.load(f) 
+# Define potential list based on the selected method
+input_area = config['input_area']
+if input_area == 'resource_grades':
+    # Open json file with resource grades
+    resource_grades_file = os.path.join(data_path, 'suitability', f'{region_name}_{technology}_{scenario}_relevant_resource_grades.json')
+    with open(resource_grades_file, 'r') as f:
+        potential_list = json.load(f)
+elif input_area == 'available_land':
+    potential_list = [region_name]
+elif input_area == 'study_region':
+    potential_list = [region_name]
+else:
+    raise ValueError(f"Unknown potential method: {input_area}")
 
 # List all files in the weather data files (in case of multiple files per year)
-cutout_files = glob.glob(os.path.join(config['weather_data_path'],"weather_data", f'*_{weather_year}_*'))
+if config.get('weather_external_data_path'):
+    weather_data_path = os.path.abspath(config["weather_external_data_path"])
+else:
+    weather_data_path = os.path.join(dirname, 'Raw_Spatial_Data', 'Weather_data')
+cutout_files = glob.glob(os.path.join(weather_data_path, f'*{weather_year}*'))
 
 # Regional entent
 x1, y1, x2, y2 = region.to_crs(global_crs_obj).total_bounds 
 offset = 1 # Offset to ensure the cutout includes the entire region
 
-# Load bias correction data
-ERA5_wnd100m_bias_path = os.path.join(config['weather_data_path'], 'bias_correction_factors', 'ERA5_wnd100m_bias.nc')
-ERA5_wnd100m_bias = xr.open_dataset(ERA5_wnd100m_bias_path).sel(x=slice(x1 - offset, x2 + offset), y=slice(y1 - offset, y2 + offset))
+# Open netcdf cutout files
+ds = xr.open_mfdataset(cutout_files)
 
-# Preallocate a dataframe for resource grades and time series
+# Pre-allocate a dataframe for potentials and time series
 time = pd.date_range(start=f'{weather_year}-01-01', end=f'{weather_year}-12-31 23:00', freq='h')
-df_rg = pd.DataFrame(index=time, columns=resource_grades)
+df_pot = pd.DataFrame(index=time, columns=potential_list)
 
 for cutout_file in cutout_files:
     print(f"Processing cutout file: {rel_path(cutout_file)}")
+    
     cutout = atlite.Cutout(path=cutout_file).sel(x=slice(x1 - offset, x2 + offset), y=slice(y1 - offset, y2 + offset))
-    # Apply bias correction to the weather data
-    cutout.data['wnd100m'] = cutout.data['wnd100m'] * ERA5_wnd100m_bias['wnd100m']
 
-    for rg in resource_grades:
-        print(f"Processing resource grade: {rg}")
-        # Load the resource grade
-        potentialPath = os.path.join(
-            data_path, 'suitability', 
-            f"{rg}_{local_crs_tag}.tif"
-        )
-        
-        # Loading potential
-        excluder = ExclusionContainer(crs=local_crs_obj, res=res)
-        excluder.add_raster(potentialPath, codes=1, invert=True)
+    # Apply bias correction to the wind data
+    if config['weather_bias_correction'][technology]:
+        # Load bias correction data
+        if technology in ['onshorewind', 'offshorewind']:
+            ERA5_wnd100m_bias_path = os.path.join(weather_data_path, 'bias_correction_factors', 'ERA5_wnd100m_bias.nc')
+            ERA5_wnd100m_bias = xr.open_dataset(ERA5_wnd100m_bias_path).sel(x=slice(x1 - offset, x2 + offset), y=slice(y1 - offset, y2 + offset))
+            # Apply bias correction
+            cutout.data['wnd100m'] = cutout.data['wnd100m'] * ERA5_wnd100m_bias['wnd100m']
+        elif technology == 'solar':
+            ERA5_ghi_bias_path = os.path.join(weather_data_path, 'bias_correction_factors', 'ERA5_ghi_bias.nc')
+            ERA5_ghi_bias = xr.open_dataset(ERA5_ghi_bias_path).sel(x=slice(x1 - offset, x2 + offset), y=slice(y1 - offset, y2 + offset))
+            # Apply bias correction
+            cutout.data['influx_direct'] = cutout.data['influx_direct'] * ERA5_ghi_bias['ghi']
+            cutout.data['influx_diffuse'] = cutout.data['influx_diffuse'] * ERA5_ghi_bias['ghi']
+
+    for p in potential_list:
+        print(f"Processing potential: {p}")
+
+        # Create excluder
+        excluder = atlite.ExclusionContainer(crs=local_crs_obj, res=res)
+
+        # Load the potential
+        if input_area == 'resource_grades':
+            potentialPath = os.path.join(data_path, 'suitability', f"{p}_{local_crs_tag}.tif")
+            excluder.add_raster(potentialPath, codes=1, invert=True)
+        elif input_area == 'available_land':
+            potentialPath = os.path.join(data_path, 'available_land', f"{region_name}_{technology}_{scenario}_available_land_{local_crs_tag}.tif")
+            excluder.add_raster(potentialPath, codes=1, invert=True)
+        elif input_area == 'study_region':
+            potentialPath = os.path.join(data_path, f"{region_name}_{local_crs_tag}.geojson")
+            excluder.add_geometry(potentialPath, invert=True)
 
         # Availability of the area
         masked, transform = excluder.compute_shape_availability(region)
@@ -134,13 +162,13 @@ for cutout_file in cutout_files:
         A = cutout.availabilitymatrix(region, excluder)
 
         # Aggregation of potential to weather data cells
-        fig, ax = plt.subplots()
-        region.plot(ax=ax, edgecolor="k", color="None")
-        A.plot(ax=ax, cmap="Greens")
+        #fig, ax = plt.subplots()
+        #A.plot(ax=ax, cmap="Greens")
+        #region.plot(ax=ax, edgecolor="k", color="None")
         #cutout.grid.plot(ax=ax, color="None", edgecolor="grey")
 
         capacity_matrix = A.stack(spatial=["y", "x"])
-
+        
         # Simulate the technology profiles based on the configuration
         match technology:
             case "solar":
@@ -194,26 +222,14 @@ for cutout_file in cutout_files:
                 # Apply derate
                 ds_tech = ds_tech * tech_config["tech_derate"]
 
-            case "hydro":
-                plants, basins = hydro()
-                ds_tech = cutout.hydro(
-                    plants=plants,
-                    hydrobasins=basins
-                )
-                # Apply derate
-                ds_tech = ds_tech * tech_config["tech_derate"]
-
-            case _:
-                raise ValueError(f"Unknown technology: {technology}")
-
         # Add resource grade to the dataframe
         df_tech = ds_tech.to_pandas()
-        df_rg.loc[df_tech.index, rg] = df_tech.iloc[:, 0]
+        df_pot.loc[df_tech.index, p] = df_tech.iloc[:, 0]
 
 # Check for missing values and give warning if any are found
-if df_rg.isnull().values.any():
+if df_pot.isnull().values.any():
     print("Warning: Missing values found in the resource grades dataframe.")
 
 # Save the resource grade time series to a CSV file
-output_file=os.path.join(output_path, f"{region_name}_{scenario}_{technology}_{weather_year}.csv")
-df_rg.to_csv(output_file)
+output_file=os.path.join(output_path, f"{region_name}_{technology}_{scenario}_profile_{weather_year}.csv")
+df_pot.to_csv(output_file)

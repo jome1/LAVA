@@ -1,0 +1,146 @@
+# Technologies included in suitability analysis (technologies competing for same areas within region)
+suitability_techs: ['solar', 'onshorewind']
+
+# Method to define the area for suitability analysis
+input_area: available_land # 'available_land' or 'study_region'
+
+# Enable/disable suitability categories
+suitability_params:
+  terrain: true
+  topography: false
+  substation_distance: true
+  region: true
+
+# Weight of individual modifiers in the final suitability weight (% of investment cost the component affects)
+modifier_weights: {
+    'terrain': {
+        'onshorewind': 1,
+        'solar': 1
+    },
+    'topography': {
+        'onshorewind': 1,
+        'solar': 1
+    },
+    'substation_distance': {
+        'onshorewind': 0.1,
+        'solar': 0.1
+    },
+    'region': {
+        'onshorewind': 1,
+        'solar': 1
+    },
+}
+
+# Cost tiers ranges (factors relative to average investment cost)
+tiers: {
+    'Tier 1': [0, 0.676],
+    'Tier 2': [0.676, 0.710],
+    'Tier 3': [0.710, 0.936],
+    'Tier 4': [0.936, 1.029],
+    'Tier 5': [1.029, .inf],
+}
+
+# Minimum area for resource grades and distributed areas (km2)
+min_area_distributed: 25 # Isolated areas with less than this size (connected) will be considered as distributed generation
+min_area_rg: 125 # Minimum area for a given resource grade to be considered. Smaller areas will be assigned to distributed generation
+
+# Substation distance (meters)
+average_sub_dist: {
+    'North': { 'onshorewind': 50000, 'solar': 50000},
+    'East': { 'onshorewind': 25000, 'solar': 25000},
+    'Central': { 'onshorewind': 25000, 'solar': 25000},
+    'Northeast': { 'onshorewind': 50000, 'solar': 50000},
+    'Northwest': { 'onshorewind': 50000, 'solar': 50000},
+    'South': { 'onshorewind': 25000, 'solar': 25000},
+}
+
+# Terrain modifier (factors relative to average investment cost). Terrain types defined by ruggedness ranges.
+terrain_modifier:
+# Plains
+  - range: [0, 150]
+    cost: {
+        'onshorewind': 1.000,
+        'solar': 1.000
+    }
+# Hills
+  - range: [150, 450]
+    cost: {
+        'onshorewind': 1.045,
+        'solar': 1.049
+    }
+# Mountains
+  - range: [450, 3000]
+    cost: {
+        'onshorewind': 1.145,
+        'solar': 1.097
+    }
+
+landcover_modifier: {
+    60: { # Bare / sparse vegetation
+        'onshorewind': 0.719,
+        'solar': 0.852
+    }
+}
+
+# Topography modifier (factors relative to average investment cost). Elevation or sea bed ranges in meters.
+topography_modifier:
+# Shallow water
+  - range: [-40, 0]
+    cost: {
+        'offshorewind': 1.000,
+    }
+# Medium water
+  - range: [-70, -40]
+    cost: {
+        'offshorewind': 1.000,
+    }
+# Deep water
+  - range: [-100, -70]
+    cost: {
+        'offshorewind': 1.000
+    }
+
+# Regional cost modifiers (factors relative to average investment cost)
+region_modifier: { 
+    'North': { 'onshorewind': 1.055, 'solar': 1.083},
+    'East': { 'onshorewind': 1.090, 'solar': 1.125}, 
+    'Central': { 'onshorewind': 1.084, 'solar': 1.111}, 
+    'Northeast': { 'onshorewind': 1.054, 'solar': 1.028}, 
+    'Northwest': { 'onshorewind': 1.000, 'solar': 1.000}, 
+    'South': { 'onshorewind': 1.122, 'solar': 1.160},
+}
+
+region_set: { 
+    'Anhui': 'East',
+    'Beijing': 'North',
+    'Chongqing': 'Central',
+    'East-InnerMongolia': 'Northeast',
+    'Fujian': 'East',
+    'Gansu': 'Northwest',
+    'Guangdong': 'South',
+    'Guangxi': 'South',
+    'Guizhou': 'South',
+    'Hainan': 'South',
+    'Hebei': 'North',
+    'Heilongjiang': 'Northeast',
+    'Henan': 'Central',
+    'Hubei': 'Central',
+    'Hunan': 'Central',
+    'Jiangsu': 'East',
+    'Jiangxi': 'Central',
+    'Jilin': 'Northeast',
+    'Liaoning': 'Northeast',
+    'Ningxia': 'Northwest',
+    'Qinghai': 'Northwest',
+    'Shaanxi': 'Northwest',
+    'Shandong': 'North',
+    'Shanghai': 'East',
+    'Shanxi': 'North',
+    'Sichuan': 'Central',
+    'Tianjin': 'North',
+    'West-InnerMongolia': 'North',
+    'Xinjiang': 'Northwest',
+    'Xizang': 'Northwest',
+    'Yunnan': 'South',
+    'Zhejiang': 'East'
+}

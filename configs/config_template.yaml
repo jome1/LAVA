@@ -138,55 +138,31 @@ wdpa_consider_status: ["Adopted", "Designated", "Established", "Inscribed"] #all
 
 
 #--Weather and energy data assumptions-------------------------------------------------------------
-weather_data_path: Raw_Spatial_Data 
+# Absolute path to external folder with weather data files, otherwise weather data will be stored in Raw_Spatial_Data/Weather_data
+#weather_external_data_path: "DRIVE:/PATH/TO/DATA/"
 
-weather_years: [2019] # list of years 
+# Method to define the area for which energy profiles are created
+input_area: resource_grades # 'resource_grades' or 'available_land' or 'study_region'
 
+# Year of weather data to be used for profile creation
+weather_year: 2015
 
-#--Suitability cost assumptions----------------------------------------------------------------------
+# Download weather data within study region boundaries, or geographical bounds defined below
+weather_data_extend: geo_bounds # 'study_region' or 'geo_bounds'
 
-# Minimum area for resource grades (% of total available land area)
-min_area_rg: 0.05
-
-# Cost tiers
-tiers: {
-    'Tier1': [0.5, 1.00],
-    'Tier2': [1.00, 1.50],
-    'Tier3': [1.50, 2.00],
-    'Tier4': [2.00, 2.50],
-    'Tier5': [2.50, 100],
-    }
-
-# Substation distance (meters)
-average_sub_dist: {
-    'onshorewind': 5000,
-    'solar': 5000
+# If 'geo_bounds' is selected, define the bounding box here (geographical coordinates)
+weather_data_geo_bounds: { 
+    'west': 73,
+    'south': 15,
+    'east': 135,
+    'north': 54
 }
 
-# Terrain modifier (terrain types defined by ruggedness ranges)
-terrain_modifier:
-# Plains
-  - range: [0, 150]
-    cost: {
-        'onshorewind': 1.02,
-        'solar': 0.99
-    }
-# Hills
-  - range: [150, 450]
-    cost: {
-        'onshorewind': 1.07,
-        'solar': 1.04
-    }
-# Mountains
-  - range: [450, 10000]
-    cost: {
-        'onshorewind': 1.17,
-        'solar': 1.09
-    }
-
-landcover_modifier: {
-    60: { # Bare / sparse vegetation
-        'onshorewind': 0.74,
-        'solar': 0.85
-    }
+# Apply bias correction to ERA5 wind data based on Global Wind Atlas and Global Solar Atlas data
+weather_bias_correction: { 
+  onshorewind: true,
+  offshorewind: true,
+  solar: false
 }
+
+weather_bias_range: [0.5, 2.0] # Limit min and max bias correction factors to this range

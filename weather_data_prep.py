@@ -1,94 +1,96 @@
 import atlite
-import numpy as np
-import xarray as xr
-import pandas as pd
-import matplotlib.pyplot as plt
-import geopandas as gpd
-from rasterio.plot import show
 import os
-
+import yaml
+import argparse
+import geopandas as gpd
+from utils.data_preprocessing import get_country_bounds_from_code
 
 
 ### --------- Input data and configuration ------------- ###
 
-class M(object):
-    pass
+dirname = os.getcwd() 
+with open(os.path.join("configs/config.yaml"), "r", encoding="utf-8") as f:
+    config = yaml.load(f, Loader=yaml.FullLoader)
 
-# Store all parameters in model object
-def InstantiateModel():
-
-    # Make model object from class
-    m = M()
-
-    m.years = [str(y) for y in range(1990,1991)]
-
-    m.region_name = "Beijing" #'China_mainland_'
-
-    # Balmorel time sets and geography
-    m.region_file = "Raw_Spatial_Data/custom_study_area/gadm41_CHN_1_Beijing.geojson" #'data/Beijing/Beijing_EPSG32650.geojson'
-
-    # Shapefile to define the region downloadet from ERA5
-    m.region = gpd.read_file(m.region_file)
-
-    # Define UTC-time
-    m.t_start_1 = '-01-01'
-    m.t_end_1 = '-04-30'
-    m.t_start_2 = '-05-01'
-    m.t_end_2 = '-08-31'
-    m.t_start_3 = '-09-01'
-    m.t_end_3 = '-12-31'
-
-    m.data_path = "Weather data/ERA5/"
+region_name = config['study_region_name']
+weather_year = config["weather_year"]
+weather_data_extend = config['weather_data_extend'] 
+country_code = config["country_code"]
 
 
-    return m
+# Initialize parser for command line arguments and define arguments
+parser = argparse.ArgumentParser()
+parser.add_argument("--region", default=region_name, help="study region name")
+parser.add_argument("--method",default="manual", help="method to run the script, e.g., snakemake or manual")
+parser.add_argument("--weather_year", default=weather_year, help="weather year for the energy profiles")
+args = parser.parse_args()
 
-### ---------- Request weather data ----------- ###
+# If running via Snakemake, use the region name and folder name from command line arguments
+if args.method == "snakemake":
+    region_name= args.region
+    weather_year = args.weather_year
+    print(f'\nWeather data preparation')
+    print(f"Running via snakemake - measures: weather_year={weather_year}")
+else:
+    print('\nWeather data preparation')
+    print(f"Running manually - measures: weather_year={weather_year}")
 
-def api_request(m, year):
+# Weather data path
+if config.get('weather_external_data_path'):
+    weather_data_path = os.path.abspath(config["weather_external_data_path"])
+else:
+    weather_data_path = os.path.join(dirname, 'Raw_Spatial_Data', 'Weather_data')
+os.makedirs(weather_data_path, exist_ok=True)
 
-    # We create an `atlite.Cutout` which covers the whole regions and builds the backbone for our analysis.
-    # Later, it will enable to retrieve the needed weather data. 
-    bounds = m.region.union_all().buffer(0).bounds
 
-    cutout_file_1 = m.region_name + year + '_1'
-    cutout_1 = atlite.Cutout(m.data_path + cutout_file_1, module="era5", bounds=bounds, time=slice(year + m.t_start_1, year + m.t_end_1))
-    
-    cutout_file_2 = m.region_name + year + '_2'
-    cutout_2 = atlite.Cutout(m.data_path + cutout_file_2, module="era5", bounds=bounds, time=slice(year + m.t_start_2, year + m.t_end_2))
+if weather_data_extend == 'country_code':
+    bounds = get_country_bounds_from_code(country_code)
+    cutout_output_file_metadata = country_code
+elif weather_data_extend == 'geo_bounds':
+    bounds = config["weather_data_geo_bounds"]
+    bounds = [bounds['west'], bounds['south'], bounds['east'], bounds['north']]  # minx, miny, maxx, maxy
+    cutout_output_file_metadata = f"{bounds[0]}-{bounds[1]}-{bounds[2]}-{bounds[3]}"
+elif weather_data_extend == 'study_region':
+    regionPath = os.path.join(dirname, 'data', f'{region_name}', f'{region_name}_EPSG4326.geojson')
+    region = gpd.read_file(regionPath)
+    bounds = region.total_bounds # minx, miny, maxx, maxy
+    cutout_output_file_metadata = region_name
+else:
+    raise ValueError("Invalid weather_data_extend value in config.yaml. Use 'geo_bounds' or 'region'.")
 
-    cutout_file_3 = m.region_name + year + '_3'
-    cutout_3 = atlite.Cutout(m.data_path + cutout_file_3, module="era5", bounds=bounds, time=slice(year + m.t_start_3, year + m.t_end_3))
+# ---- define cutout outputh file ---- #
+cutout_file_path_1 = os.path.join(weather_data_path, f"{cutout_output_file_metadata}_{weather_year}_1.nc")
+cutout_file_path_2 = os.path.join(weather_data_path, f"{cutout_output_file_metadata}_{weather_year}_2.nc")
 
-    # Plot gridded map with request
-    '''
-    plt.rc("figure", figsize=[10, 7])
-    fig, ax = plt.subplots()
-    m.region.plot(ax=ax)
-    cutout.grid.plot(ax=ax, edgecolor="grey", color="None")
-    '''
+# Calculate bounding box which is 0.5 degrees bigger
+d = 0.5
+bounds = bounds + [-d, -d, d, d]
+print(f"Bounding box (EPSG:4326): \nminx (West): {bounds[0]}, miny (South): {bounds[1]}, maxx (East): {bounds[2]}, maxy (North): {bounds[3]}")
 
-    # After the cutout preparation, we can calculate the static and dynamic capacity factors of each region. 
-    print("Preparing cutout 1")
+#----------- Prepare weather data cutouts from ERA5 via Copernicus API ------------- ###
+print("Processing weather year: ", weather_year)
+
+t_start_1 = f"{weather_year}-01-01"
+t_end_1 = f"{weather_year}-06-30"
+t_start_2 = f"{weather_year}-07-01"
+t_end_2 = f"{weather_year}-12-31"
+
+
+# Define cutouts
+cutout_1 = atlite.Cutout(path=cutout_file_path_1,  module="era5", x=slice(bounds[0], bounds[2]), y=slice(bounds[1], bounds[3]), time=slice(t_start_1, t_end_1))
+cutout_2 = atlite.Cutout(path=cutout_file_path_2,  module="era5", x=slice(bounds[0], bounds[2]), y=slice(bounds[1], bounds[3]), time=slice(t_start_2, t_end_2))
+
+# Connect to API and preprare/download cutouts
+print(f"Preparing cutout from Climate Data Store API and downloading data to {weather_data_path}...")
+
+if not os.path.exists(cutout_file_path_1):
+    print(f"Time period: {t_start_1} to {t_end_1}")
     cutout_1.prepare()
-    print("Preparing cutout 2")
+else:
+    print(f"Cutout file for time period {t_start_1} to {t_end_1} already exists. Skipping download.")
+
+if not os.path.exists(cutout_file_path_2):
+    print(f"Time period: {t_start_2} to {t_end_2}")
     cutout_2.prepare()
-    print("Preparing cutout 3")
-    cutout_3.prepare()
-
-    #return cutout
-
-def ext_cutout(file_path):
-    # Get cutout from external source
-    cutout = atlite.Cutout(path=file_path)
-    return cutout
-
-
-def main():
-    m = InstantiateModel()
-
-    for y in m.years:
-        print("Weather year " + y)
-        api_request(m, y)
-
-main()
+else:
+    print(f"Cutout file for time period {t_start_2} to {t_end_2} already exists. Skipping download.")

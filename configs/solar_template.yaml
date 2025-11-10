@@ -52,7 +52,7 @@ max_forest_density: null # (0–10 % = non‑forest/scrub, 10–40 % = sparse 
 additional_exclusion_polygons_buffer: [] #list of buffers in meters in the order of the files in the "additional_exclusion_polygons"-folder in the region data folder
 
 # energy resources
-min_solar_production: 1050 #kWh/kW/year
+min_solar_production: 1000 #kWh/kW/year
 max_solar_production: null #kWh/kW/year
 
 # inclusion filters (connected with AND logic) (meters)
@@ -74,7 +74,7 @@ tech_derate: 0.95
 
 # --Suitability and cost assumptions--------------------------------------------
 # Solar resource groups (kWh/m²/year)
-sg_thr: 
+rg_thr: 
     SG1: [1000, 1300]
     SG2: [1300, 1600]
     SG3: [1600, 3000]
