@@ -52,7 +52,7 @@ max_forest_density: null # (0–10 % = non‑forest/scrub, 10–40 % = sparse 
 additional_exclusion_polygons_buffer: [] #list of buffers in meters in the order of the files in the "additional_exclusion_polygons"-folder in the region data folder
 
 # energy resources
-min_wind_speed: 5 #m/s
+min_wind_speed: 4.5 #m/s
 max_wind_speed: null #m/s
 
 # inclusion filters (connected with AND logic) (meters)
@@ -74,7 +74,7 @@ tech_derate: 0.95
 
 # --Suitability and cost assumptions--------------------------------------------
 # Wind resource groups (m/s)
-wg_thr: 
+rg_thr: 
     WG1: [4.5, 5.5]
     WG2: [5.5, 6.5]
     WG3: [6.5, 7.5]

@@ -19,10 +19,8 @@ dependencies:
   - ipython
   - ipykernel
   - openeo
-  - pyrosm
   - fiona
   - requests
-  - pyrosm
   - openpyxl
   - xdem
   - snakemake
@@ -30,3 +28,4 @@ dependencies:
   - pip:
     - OSMPythonTools
     - distancerasters
+    - geonamescache

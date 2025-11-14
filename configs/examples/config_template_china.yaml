@@ -1,5 +1,5 @@
 
-study_region_name: Gansu #all files and the results folder will be named like that
+study_region_name: Beijing #all files and the results folder will be named like that
 country_code: CHN #3-letter ISO code; also needed for global wind atlas
 
 
@@ -139,116 +139,32 @@ wdpa_consider_status: ["Adopted", "Designated", "Established", "Inscribed"] #all
 
 
 #--Weather and energy data assumptions-------------------------------------------------------------
-weather_data_path: Raw_Spatial_Data 
+# Absolute path to external folder with weather data files, otherwise weather data will be stored in Raw_Spatial_Data/Weather_data
+weather_external_data_path: "DRIVE:/PATH/TO/DATA/"
 
-weather_year: 1990 #[str(y) for y in range(1990,2020)]
 
-# Technology data
-tech: #"HeatDemand"
-tech_derate: 0.95
+# Method to define the area for which energy profiles are created
+input_area: resource_grades # 'resource_grades' or 'available_land' or 'study_region'
 
-# Heat demand
-heat_demand_start_day: "01-10" #start day of heat demand profile, format: DD-MM
-heat_demand_end_day: "30-04" #end day of heat demand profile, format: DD-MM
-heat_demand_hour_shift: 8 # shift of heat demand profile in hours, such that daily heat demand average follows diurnal temperature profile
-heat_demand_constant: 0 # Corresponding to no temperature independent heat demand
-heat_demand_threshold: 15 # threshold for heat demand profile, in degrees Celsius
+# Year of weather data to be used for profile creation
+weather_year: 2015
 
-#--Suitability cost assumptions----------------------------------------------------------------------
+# Download weather data within study region boundaries, or geographical bounds defined below
+weather_data_extend: study_region # 'study_region' or 'geo_bounds' or "country_code"
 
-# Minimum area for resource grades (% of total available land area)
-min_area_rg: 0.05
-
-# Cost tiers
-tiers: {
-    'Tier1': [0.5, 1.00],
-    'Tier2': [1.00, 1.50],
-    'Tier3': [1.50, 2.00],
-    'Tier4': [2.00, 2.50],
-    'Tier5': [2.50, 100],
-    }
-
-# Substation distance (meters)
-average_sub_dist: {
-    'onshorewind': 5000,
-    'solar': 5000
+# If 'geo_bounds' is selected, define the bounding box here (geographical coordinates)
+weather_data_geo_bounds: { 
+    'west': 73,
+    'south': 15,
+    'east': 135,
+    'north': 54
 }
 
-# Terrain modifier (terrain types defined by ruggedness ranges)
-terrain_modifier:
-# Plains
-  - range: [0, 150]
-    cost: {
-        'onshorewind': 1.02,
-        'solar': 0.99
-    }
-# Hills
-  - range: [150, 450]
-    cost: {
-        'onshorewind': 1.07,
-        'solar': 1.04
-    }
-# Mountains
-  - range: [450, 10000]
-    cost: {
-        'onshorewind': 1.17,
-        'solar': 1.09
-    }
-
-landcover_modifier: {
-    60: { # Bare / sparse vegetation
-        'onshorewind': 0.74,
-        'solar': 0.85
-    }
+# Apply bias correction to ERA5 wind data based on Global Wind Atlas and Global Solar Atlas data
+weather_bias_correction: { 
+  onshorewind: true,
+  offshorewind: true,
+  solar: false
 }
 
-# Region modifier (regional multipliers for wind and solar resources)
-region_modifier: {
-    'Anhui': {'onshorewind': 1.01, 'solar': 1.03},
-    'Beijing': {'onshorewind': 0.98, 'solar': 0.99},
-    'Chongqing': {'onshorewind': 1.01, 'solar': 1.01},
-    'Fujian': {'onshorewind': 1.01, 'solar': 1.03},
-    'Gansu': {'onshorewind': 0.93, 'solar': 0.91},
-    'Guangdong': {'onshorewind': 1.03, 'solar': 1.04},
-    'Guangxi': {'onshorewind': 1.03, 'solar': 1.04},
-    'Guizhou': {'onshorewind': 1.03, 'solar': 1.04},
-    'Hainan': {'onshorewind': 1.03, 'solar': 1.04},
-    'Hebei': {'onshorewind': 0.98, 'solar': 0.99},
-    'Heilongjiang': {'onshorewind': 0.98, 'solar': 0.94},
-    'Henan': {'onshorewind': 1.01, 'solar': 1.01},
-    'Hubei': {'onshorewind': 1.01, 'solar': 1.01},
-    'Hunan': {'onshorewind': 1.01, 'solar': 1.01},
-    'NeiMongol': {'onshorewind': 0.98, 'solar': 0.99},
-    'Jiangsu': {'onshorewind': 1.01, 'solar': 1.03},
-    'Jiangxi': {'onshorewind': 1.01, 'solar': 1.01},
-    'Jilin': {'onshorewind': 0.98, 'solar': 0.94},
-    'Liaoning': {'onshorewind': 0.98, 'solar': 0.94},
-    'NingxiaHui': {'onshorewind': 0.93, 'solar': 0.91},
-    'Qinghai': {'onshorewind': 0.93, 'solar': 0.91},
-    'Shaanxi': {'onshorewind': 0.93, 'solar': 0.91},
-    'Shandong': {'onshorewind': 0.98, 'solar': 0.99},
-    'Shanghai': {'onshorewind': 1.01, 'solar': 1.03},
-    'Shanxi': {'onshorewind': 0.98, 'solar': 0.99},
-    'Sichuan': {'onshorewind': 1.01, 'solar': 1.01},
-    'Tianjin': {'onshorewind': 0.98, 'solar': 0.99},
-    'XinjiangUygur': {'onshorewind': 0.93, 'solar': 0.91},
-    'Xizang': {'onshorewind': 0.93, 'solar': 0.91},
-    'Yunnan': {'onshorewind': 1.03, 'solar': 1.04},
-    'Zhejiang': {'onshorewind': 1.01, 'solar': 1.03}
-}
-
-# Weight of individual modifiers in the final suitability weight (% of investment cost the component affects)
-modifier_weights: {
-    'terrain': {
-        'onshorewind': 1,
-        'solar': 1
-    },
-    substation_distance: {
-        'onshorewind': 0.1,
-        'solar': 0.1
-    },
-    region': {
-        'onshorewind': 1,
-        'solar': 1
-    },
-}
+weather_bias_range: [0.5, 2.0] # Limit min and max bias correction factors to this range
