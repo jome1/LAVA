@@ -12,6 +12,7 @@ Before installing and running **LAVA**, ensure you have the following:
 Having installed Conda check that you have access to conda in your terminal (or Anaconda Prompt on Windows) and make sure to add conda to your system PATH (search for the following folders in your machine).
 
 .. code-block:: console
+
     # check conda
     conda --version
 
