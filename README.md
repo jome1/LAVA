@@ -153,10 +153,12 @@ original from [here](https://tree.nathanfriend.com/?s=(%27opt5s!(%27fancy7~fullP
 LAVA/
 ├── 📁 configs
 │   ├── config_template.yaml
-│   └── config.yaml
+│   ├── config_advanced_settings_template.yaml
+│   ├── onshorewind_template.yaml
+│   ├── solar_template.yaml
+│   └── config_snakemake.yaml
+├── 📁 docs
 ├── 📁 envs
-├── 📁 other
-├── 📁 utils
 ├── 📁 Raw_Spatial_Data/
 │   ├── 📁 additional_exclusion_polygons
 │   ├── 📁 custom_study_area
@@ -166,8 +168,18 @@ LAVA/
 │   ├── 📁 landcover
 │   ├── 📁 OSM
 │   └── 📁 protected_areas
+├── 📁 snakemake
+├── 📁 tkinter_app
+├── 📁 utils
+├── 📁 weather_data
 └── 📁 data/
     └── 📁 "region_name"/
+        ├── 📁 available_land/
+        ├── 📁 derived_from_DEM/
+        │   ├── *slope*
+        │   └── *aspect*
+        ├── 📁 OSM_infrastructure/
+        ├── 📁 proximity/
         ├── *DEM*
         ├── *region_polygon*
         ├── *solar*
@@ -176,13 +188,7 @@ LAVA/
         ├── *landcover*
         ├── *EPSG*
         ├── *landuses*
-        ├── *pixel_size*
-        ├── *OSM_files*
-        ├── 📁 derived_from_DEM/
-        │   ├── *slope*
-        │   └── *aspect*
-        ├── 📁 additional_exclusion_polygons/
-        └── 📁 available_land/
+        └── *pixel_size*
 ```
         
 
