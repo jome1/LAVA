@@ -1,5 +1,5 @@
-project = "LAVA_china"
-author = "m-dandrea"
+project = "LAVA"
+author = "m-dandrea, jome1"
 release = "0.1"
 
 extensions = [
