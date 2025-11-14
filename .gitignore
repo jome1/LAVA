@@ -4,6 +4,7 @@
 # --- Setup ---
 !envs
 !envs/requirements.yaml
+!envs/win-64.lock.yaml
 # --- Main scripts ---
 !spatial_data_prep.py
 !Exclusion.py
