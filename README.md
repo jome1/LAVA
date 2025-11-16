@@ -124,14 +124,7 @@ With the script `Exclusion.py` you can finally derive the available area of your
 The code automatically recognizes if a file does not exist and thus does not take into account the respective file for the exclusion (e.g. there is no coastlines files when having a study region without a coast).
 
 
-## 6. Bring all files in a QGIS project together
-:warning: not working due to QGIS python package troubles
-The script `create_qgis_project.py` puts all files together into a QGIS project to easily display them. This script needs to be used in the 'QGIS environment'. You can install it from the `requirements_qgis.yaml`. Additionally, you have to install the QGIS python package with the same version as your current QGIS installation in that environment. Sometimes you need to uninstall the python version in your environment and then install the QGIS python package inside in order to avoid trouble with package dependencies.
-
-`conda install -c conda-forge qgis=VERSIONNUMBER`
-
-
-## 7. Aggregating available land results
+## 6. Aggregating available land results
 Once the available land rasters are created you can combine them across study
 regions. The script `simple_results_analysis.py` scans all folders under
 `data/**/available_land/` for files matching `*_available_land_*.tif`. Files are
@@ -146,7 +139,7 @@ python simple_results_analysis.py --output aggregated_available_land.gpkg
 If run from outside the repository root, provide ``--root PATH/TO/REPO``. The
 output GeoPackage will contain one layer per technology and scenario combination.
 
-## 8. Folder structure
+## 7. Folder structure
 original from [here](https://tree.nathanfriend.com/?s=(%27opt5s!(%27fancy7~fullPath!false~trailingSCsh7~rootDot7)~B(%27B%27LAVA.configs.envs.other.utils.Raw_SpatiFDJ24custom_studyH4DEM4globFsoCr_wind_atCs4GOAS484OSM43.dJ%5C%27reg5_name%5C%27I*DEM6reg96soCr6wind63686EPSG6Cnduses6pixel_size6OSM_files0derived_from_DEMI-*slope0-*aspect02%2FI%27)~vers5!%271%27)-%20%20.%5Cn-6I2addit5Fexclus9s3protectedHs4.-5ion60*7!true8Cndcover95_polygonBsource!ClaFal_H_areaI4-Jata4%01JIHFCB987654320.-)
 
 ```
@@ -192,7 +185,7 @@ LAVA/
 ```
         
 
-## 9. More info / notes
+## 8. More info / notes
 * Terrascope API: not implemented because of limited functionalities (e.g. only downloads tiles, data cannot be clipped to area of interest). [API documentation](https://vitobelgium.github.io/terracatalogueclient/api.html), [ESAworldvcover Product](https://docs.terrascope.be/#/DataProducts/WorldCover/WorldCover),
 
 * [adding basemaps to QGIS](https://gis.stackexchange.com/questions/20191/adding-basemaps-in-qgis)
