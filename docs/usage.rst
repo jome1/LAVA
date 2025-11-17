@@ -2,86 +2,40 @@ Usage
 =====
 
 This guide walks through the end-to-end workflow for running the Land Availability Analysis (LAVA)
-tool on a new study region. The steps below mirror the order implemented in the repository
-scripts and the Snakemake pipeline.
+tool on a new study region. 
 
 .. contents:: Table of contents
    :local:
    :depth: 2
 
-Overview of the workflow
+Overview of the basic workflow
 ------------------------
 
-1. Complete the repository and environment setup covered in the Getting Started guide.
-2. Create the study-region configuration files in ``configs/``.
-3. Populate the ``Raw_Spatial_Data`` folders with the required input datasets.
-4. Run :mod:`spatial_data_prep.py` to clip, harmonise, and derive helper rasters and vectors.
-5. Inspect the pre-processed data (optional but recommended) with ``data_explore.ipynb``.
-6. Run :mod:`Exclusion.py` for each technology to create available-land rasters.
-7. Use :mod:`suitability.py` to derive cost-modified resource grades.
-8. Generate energy profiles with :mod:`energy_profiles.py` once weather cut-outs are available.
-9. (Optional) Automate the workflow across many regions with the Snakemake rules in
-   ``snakemake/``.
+(0. Complete the tool and basic data setup.)
+1. Create the study-region configuration files in ``configs/``.
+2. Run :mod:`spatial_data_prep.py` to download and prepare necessary data.
+3. Inspect the pre-processed data (optional but recommended) with ``data_explore.ipynb``.
+4. Run :mod:`Exclusion.py` for each technology to create available-land rasters.
+
 
 Prerequisites
 -------------
 
 The Usage steps below assume that you have already cloned the repository, created the
-``lava`` Conda environment from ``envs/requirements.yaml``, and activated it. Those steps, along
-with repository layout and configuration template locations, are documented in the
+``lava`` Conda environment from ``envs/requirements.yaml``, and downloaded the manual datasets. Those steps are documented in the
 ``Getting Started`` instructions.
 
 Configuration files
 -------------------
 
-Copy the study-region templates referenced in the Getting Started guide if you have not done so
-yet, then review the configuration entries before running the scripts. Key items in
-``configs/config.yaml`` include:
+In the **configs-folder** copy the file ``config_template.yaml``, rename it to ``config.yaml`` and fill it out. This is your main configuration file for the data download.
 
-* ``study_region_name`` and ``country_code`` which define the output directory and support
-  catalogue downloads.
-* ``landcover_source`` (``openeo`` for ESA WorldCover or ``file`` for local rasters) together
-  with ``resolution_landcover`` or ``landcover_filename``.
-* Flags for each OpenStreetMap feature class, coastline buffers, and atlas layers (wind, solar).
-* ``protected_areas_source`` which can use the WDPA downloader or a local file.
-* Optional helper layers such as ``compute_substation_proximity``, ``compute_road_proximity``,
-  ``compute_terrain_ruggedness``, and ``forest_density``.
-* ``scenario`` and ``technology`` settings that control filenames and the downstream exclusion
-  runs.
+Under the headline *#--exclusions--* in the configuration the variables ``scenario`` and ``technology`` are used to control the available land output.
 
-Technology-specific exclusion and suitability thresholds reside in ``configs/onshorewind.yaml``
-and ``configs/solar.yaml``. Adjust the resource-grade definitions, minimum area filters, and
-modifier weights before running exclusions and suitability calculations.
+For the exclusion criterias copy the files ``onshorewind_template.yaml`` and ``solar_template.yaml``. Rename them to ``onshorewind.yaml`` and ``solar.yaml`` respectively. Fill these files out in order to set the exclusion parameters.
 
-Data inputs
------------
 
-Populate ``Raw_Spatial_Data/`` according to the data sources described in the README. The most
-commonly used inputs are:
-
-* **Digital elevation model (DEM)** – Download a terrain model such as the GEBCO gridded bathymetry
-  raster, rename it to ``gebco_cutout.tif``, and place it in ``Raw_Spatial_Data/DEM/``. Higher
-  resolution DTMs can be substituted when available.
-* **Land-cover rasters** – Use ESA WorldCover via ``openeo`` or download datasets such as CORINE.
-  Place locally sourced rasters in ``Raw_Spatial_Data/landcover/`` and set ``landcover_source`` to
-  ``file``.
-* **OpenStreetMap extracts** – Fetch shapefiles from Geofabrik for the study region, unzip them,
-  and copy the folder into ``Raw_Spatial_Data/OSM/``. The scripts derive roads, railways, and
-  airports from these layers.
-* **Coastline buffers** – Download the Global Oceans and Seas geopackage, rename it ``goas.gpkg``,
-  and store it in ``Raw_Spatial_Data/GOAS/`` for coastal studies.
-* **Protected areas** – Either provide WDPA downloads in ``Raw_Spatial_Data/protected_areas/`` or
-  configure the automated download via ``protected_areas_source: wdpa``.
-* **Atlas layers** – Mean wind speed and solar resource rasters can be fetched automatically when
-  the corresponding flags are enabled; cached copies are saved in
-  ``Raw_Spatial_Data/global_solar_wind_atlas/``.
-* **Additional exclusions** – Place any custom polygons or rasters in the
-  ``Raw_Spatial_Data/additional_exclusion_polygons/`` and
-  ``Raw_Spatial_Data/additional_exclusion_rasters/`` folders and reference them from the configs.
-* **Weather cut-outs** – Store atlite-ready NetCDF files under ``weather_data/``. Use
-  :mod:`weather_data_prep.py` as a template for preparing ERA5 cut-outs.
-
-Spatial preprocessing
+Prepare spatial data
 ---------------------
 
 Run the preprocessing script after configuring the study region. It clips the raw inputs to the
@@ -102,7 +56,7 @@ credentials the first time it runs. Outputs are written to ``data/<RegionName>/`
 * ``landuses_<RegionName>.json`` and ``pixel_size_<RegionName>_<CRS>.json`` describing the
   land-cover codes and raster resolution required by the exclusion routines.
 
-Inspecting the outputs
+Inspect data inputs
 ----------------------
 
 Use ``data_explore.ipynb`` to verify the preprocessing results. The notebook loads data from the
@@ -127,9 +81,11 @@ technology configuration, and writes ``*_available_land_*.tif`` files under
 for traceability.
 
 
-
 Advanced functionalities
-~~~~~~~~~~
+---------------------------
+!!!
+TBA
+!!!
 
 Suitability and resource grades
 ~~~~~~~~~~
