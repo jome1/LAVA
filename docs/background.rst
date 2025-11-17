@@ -28,7 +28,7 @@ Relevant Literature
 
    * - `A GIS-based method for assessing the economics of utility-scale photovoltaic systems <https://doi.org/10.1016/j.apenergy.2023.122044>`_
      - 2024
-     - General
+     - Poland
      - P. Benalcazar, A. Komorowska, J. Kamiński
 
    * - `A suitability mapping for the PV solar farms in Egypt based on GIS-AHP to optimize multi-criteria feasibility <https://doi.org/10.1016/j.asej.2021.10.013>`_
@@ -61,8 +61,8 @@ Relevant Literature
      - Global
      - J. R. Oakleaf et al.
 
-   * - Mesoscale and microscale downscaling for the Wind Atlas of Mexico (WAM) project
-     - —
+   * - `Mesoscale and microscale downscaling for the Wind Atlas of Mexico (WAM) project <https://orbit.dtu.dk/en/publications/mesoscale-and-microscale-downscaling-for-the-wind-atlas-of-mexico/>`_
+     - 2021
      - Mexico
      - B. T. Olsen et al.
 
@@ -89,4 +89,4 @@ Relevant Literature
    * - Estimating the Renewable Energy Potential in Africa: A GIS-based approach
      - —
      - Africa
-     - —
+     - IRENA
