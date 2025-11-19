@@ -20,9 +20,8 @@ Having installed Conda check that you have access to conda in your terminal (or 
 - `Git <https://git-scm.com/install/>`_ (optional) if you plan to clone the repository using Git.
 - `VSCode <https://code.visualstudio.com/download>`_ or another code editor for editing configuration files and scripts.  
 In VSCode you should link the command prompt to the terminal by following the steps below:
-  - Press Ctrl + Shift + P to show all commands.
-  - Type profile in the displayed text box to filter the list.
-  - Select Terminal: Select Default Profile.
+  - Press *Ctrl + Shift + P* to show all commands.
+  - Type *Select Terminal: Select Default Profile.* and click it.
   - click on "command prompt"
 - A system with sufficient disk space (min. 15 GB) and RAM (16 GB or higher), especially if processing large datasets.
 
