@@ -52,6 +52,8 @@ More information on the setup of conda and git can be found `here <https://fneum
 
 Installation of LAVA tool
 --------------------------------
+You can find the LAVA GitHub repository `here <https://github.com/jome1/LAVA>`_.
+
 
 1. **Clone the repository**: Open a terminal, navigate to a location of your choice using :code:`cd {folder_name_in_directory}` and run:
 
