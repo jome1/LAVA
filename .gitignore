@@ -4,6 +4,7 @@
 # --- Setup ---
 !envs
 !envs/requirements.yaml
+!envs/win-64.lock.yaml
 # --- Main scripts ---
 !spatial_data_prep.py
 !Exclusion.py
@@ -51,14 +52,15 @@
 !configs
 !configs/config_template.yaml
 !configs/config_advanced_settings_template.yaml
-!configs/config_template_china.yaml
 !configs/config_snakemake.yaml
-!configs/config_snakemake_template_china.yaml
-!configs/onshorewind_template_china.yaml
-!configs/solar_template_china.yaml
 !configs/onshorewind_template.yaml
 !configs/solar_template.yaml
-!configs/suitability_template_china.yaml
+!configs/examples
+!configs/examples/config_template_china.yaml
+!configs/examples/config_snakemake_template_china.yaml
+!configs/examples/onshorewind_template_china.yaml
+!configs/examples/solar_template_china.yaml
+!configs/examples/suitability_template_china.yaml
 !configs/technologies
 !configs/technologies/HW_distributed_farm.yaml
 !configs/technologies/LW_distributed_farm.yaml
