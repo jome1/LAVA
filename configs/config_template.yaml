@@ -1,11 +1,11 @@
 
-study_region_name: Elbe-Elster #[mandatory][string] all files and the results folder will be named like that
-country_code: DEU #[mandatory][string: 3-letter ISO code] also needed for global wind atlas
+study_region_name: Odense #[mandatory][string] all files and the results folder will be named like that
+country_code: DNK #[mandatory][string: 3-letter ISO code] also needed for global wind atlas
 
 
 #--define study region----------------------------------------------------------------------
 # use GADM boundary (https://gadm.org/maps.html)
-GADM_region_name: Elbe-Elster #[situational][string] exact name as in GADM file (NAME_{gadm_level})
+GADM_region_name: Odense #[situational][string] exact name as in GADM file (NAME_{gadm_level})
 GADM_level: 2 #[situational][integer]
 # or use custom region (if file is passed, then this is used instead of the GADM definitions above)
 custom_study_area_filename: #[situational][string] if you need a dynamic filename, then use {region_name} in the filename which is replaced in the spatial_data_prep script e.g. gadm41_CHN_1_{region_name}.geojson
@@ -18,7 +18,7 @@ resolution_landcover:  #[optional][float] set manual resolution for openeo downl
 landcover_filename: #[situational][string] filename including file ending of local landcover file in Raw_Spatial_Data/landcover
 
 # DEM 
-DEM_filename: gebco_cutout.tif #[mandatory][string]
+DEM_filename: gebco_cutout.tif #[mandatory][string] name of DEM file
 
 # OSM data
 OSM_source: overpass #[mandatory][string: overpass/geofabrik]
@@ -43,12 +43,12 @@ coastlines: 1
 # wind and solar resources (GWA and GSA)
 wind_atlas: 1
 solar_atlas: 1
-country_name_solar_atlas: Germany #[mandatory][string] name of country, check https://globalsolaratlas.info/download  
+country_name_solar_atlas: Denmark #[mandatory][string] name of country, check https://globalsolaratlas.info/download  
 solar_atlas_measure: LTAym_YearlyMonthlyTotals #[situational][string] check if this measures exists under "GIS Data" on https://globalsolaratlas.info/download for your country
 
 # protected areas
-protected_areas_source: 0 #[mandatory][WDPA/file/0]
-wdpa_url: #[mandatory][string]
+protected_areas_source: WDPA #[mandatory][WDPA/file/0]
+wdpa_url: https://d1gam3xoknrgr2.cloudfront.net/current/WDPA_WDOECM_Nov2025_Public_DNK.zip #[mandatory][string]
 protected_areas_filename:  #[situational][string] include file ending (.gpkg or .geojson), needs to be in EPSG4326
 
 # forest density (optional; raster in Raw_Spatial_Data/Additional_layers)
@@ -138,31 +138,57 @@ wdpa_consider_status: ["Adopted", "Designated", "Established", "Inscribed"] #all
 
 
 #--Weather and energy data assumptions-------------------------------------------------------------
-# Absolute path to external folder with weather data files, otherwise weather data will be stored in Raw_Spatial_Data/Weather_data
-#weather_external_data_path: "DRIVE:/PATH/TO/DATA/"
+weather_data_path: Raw_Spatial_Data 
 
-# Method to define the area for which energy profiles are created
-input_area: resource_grades # 'resource_grades' or 'available_land' or 'study_region'
+weather_years: [2019] # list of years 
 
-# Year of weather data to be used for profile creation
-weather_year: 2015
+weather_data_extend: country # 'study_region' or 'geo_bounds'
 
-# Download weather data within study region boundaries, or geographical bounds defined below
-weather_data_extend: geo_bounds # 'study_region' or 'geo_bounds'
 
-# If 'geo_bounds' is selected, define the bounding box here (geographical coordinates)
-weather_data_geo_bounds: { 
-    'west': 73,
-    'south': 15,
-    'east': 135,
-    'north': 54
+#--Suitability cost assumptions----------------------------------------------------------------------
+
+# Minimum area for resource grades (% of total available land area)
+min_area_rg: 0.05
+
+# Cost tiers
+tiers: {
+    'Tier1': [0.5, 1.00],
+    'Tier2': [1.00, 1.50],
+    'Tier3': [1.50, 2.00],
+    'Tier4': [2.00, 2.50],
+    'Tier5': [2.50, 100],
+    }
+
+# Substation distance (meters)
+average_sub_dist: {
+    'onshorewind': 5000,
+    'solar': 5000
 }
 
-# Apply bias correction to ERA5 wind data based on Global Wind Atlas and Global Solar Atlas data
-weather_bias_correction: { 
-  onshorewind: true,
-  offshorewind: true,
-  solar: false
-}
+# Terrain modifier (terrain types defined by ruggedness ranges)
+terrain_modifier:
+# Plains
+  - range: [0, 150]
+    cost: {
+        'onshorewind': 1.02,
+        'solar': 0.99
+    }
+# Hills
+  - range: [150, 450]
+    cost: {
+        'onshorewind': 1.07,
+        'solar': 1.04
+    }
+# Mountains
+  - range: [450, 10000]
+    cost: {
+        'onshorewind': 1.17,
+        'solar': 1.09
+    }
 
-weather_bias_range: [0.5, 2.0] # Limit min and max bias correction factors to this range
+landcover_modifier: {
+    60: { # Bare / sparse vegetation
+        'onshorewind': 0.74,
+        'solar': 0.85
+    }
+}

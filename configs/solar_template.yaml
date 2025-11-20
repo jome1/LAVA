@@ -8,8 +8,7 @@ resolution_manual: null
 
 #landcover codes (buffer in meters) (here landcover codes for openeo as default example)
 landcover_codes: #dictionary of landcover code with corresponding buffer in meters
-  50: 500
-  70: 0
+  50: 200
 
 #landcover codes (buffer in meters) (here landcover codes for openeo as default example)
 #| Code | Class                    |
@@ -38,12 +37,12 @@ railways_buffer: 100
 roads_buffer: 100
 airports_buffer: 5000
 waterbodies_buffer: 50
-military_buffer: 500
+military_buffer: 100
 coastlines_buffer: 500
 protectedAreas_buffer: 0
 transmission_lines_buffer: 100
-generators_buffer: 100
-plants_buffer: 100 
+generators_buffer: Null
+plants_buffer: Null 
 
 # additional exclusion rasters
 max_forest_density: null # (0–10 % = non‑forest/scrub, 10–40 % = sparse woodland, 40–70 % = moderately dense forest, >70 % = dense forest).
@@ -57,7 +56,7 @@ max_solar_production: null #kWh/kW/year
 
 # inclusion filters (connected with AND logic) (meters)
 substations_inclusion_buffer: null
-transmission_inclusion_buffer: 10000
+transmission_inclusion_buffer: null
 roads_inclusion_buffer: null
 
 # area filter
