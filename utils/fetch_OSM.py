@@ -176,7 +176,7 @@ def osm_to_gpkg(
             unsupported_counts[geometry_type] = unsupported_counts.get(geometry_type, 0) + 1
 
     # Combine all geometry types into a single GeoPackage
-    gpkg_path = os.path.join(output_dir, f"overpass_{feature_key}.gpkg")
+    gpkg_path = os.path.join(output_dir, f"{feature_key}.gpkg")
     
     # Collect all features from all geometry types
     all_features = []

@@ -267,7 +267,7 @@ elif OSM_source == 'overpass':
     for feature_key in selected_osm_features_dict:
 
         # skip if we’ve already got this GeoPackage
-        gpkg_path = os.path.join(OSM_output_dir, f"overpass_{feature_key}.gpkg")
+        gpkg_path = os.path.join(OSM_output_dir, f"{feature_key}.gpkg")
 
         if os.path.exists(gpkg_path) and not config_advanced['force_osm_download']:
             print(f">>  Skipping '{feature_key}' for {region_name_clean}: '{rel_path(gpkg_path)}' already exists.")
@@ -303,7 +303,7 @@ elif OSM_source == 'overpass':
 # create proximity raster for substations if data exists and calculation is enabled
 if compute_substation_proximity:
     print('\ncomputing proximity distance for substations')
-    substation_filename = OSM_source + "_substations.gpkg" #OSM substations are saved in a file with the name of the OSM source
+    substation_filename = "substations.gpkg"
     substations_path = os.path.join(OSM_output_dir, substation_filename)
     if os.path.exists(substations_path):
         substations_gdf = gpd.read_file(substations_path)
@@ -327,7 +327,7 @@ if compute_substation_proximity:
 # create proximity raster for roads if data exists and calculation is enabled
 if compute_road_proximity:
     print('\ncomputing proximity distance for roads')
-    roads_filename=  OSM_source + "_roads.gpkg" #OSM roads are saved in a file with the name of the OSM source
+    roads_filename = "roads.gpkg"
     roads_path = os.path.join(OSM_output_dir, roads_filename)
     if os.path.exists(roads_path):
         roads_gdf = gpd.read_file(roads_path) 

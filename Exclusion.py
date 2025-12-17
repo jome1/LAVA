@@ -127,23 +127,23 @@ forestDensityPath = os.path.join(data_path, f'forest_density_{region_name_clean}
 forestDensity = 1 if os.path.isfile(forestDensityPath) else 0
 
 # OSM
-roadsPath = os.path.join(data_path_OSM, f'{OSM_source}_roads.gpkg')
+roadsPath = os.path.join(data_path_OSM, 'roads.gpkg')
 roads = 1 if os.path.isfile(roadsPath) else 0
-railwaysPath = os.path.join(data_path_OSM, f'{OSM_source}_railways.gpkg')
+railwaysPath = os.path.join(data_path_OSM, 'railways.gpkg')
 railways = 1 if os.path.isfile(railwaysPath) else 0
-airportsPath = os.path.join(data_path_OSM, f'{OSM_source}_airports.gpkg')
+airportsPath = os.path.join(data_path_OSM, 'airports.gpkg')
 airports = 1 if os.path.isfile(airportsPath) else 0
-waterbodiesPath = os.path.join(data_path_OSM, f'{OSM_source}_waterbodies.gpkg')
+waterbodiesPath = os.path.join(data_path_OSM, 'waterbodies.gpkg')
 waterbodies = 1 if os.path.isfile(waterbodiesPath) else 0
-militaryPath = os.path.join(data_path_OSM, f'{OSM_source}_military.gpkg')
+militaryPath = os.path.join(data_path_OSM, 'military.gpkg')
 military = 1 if os.path.isfile(militaryPath) else 0
-substationsPath = os.path.join(data_path_OSM, f'{OSM_source}_substations.gpkg')
+substationsPath = os.path.join(data_path_OSM, 'substations.gpkg')
 substations = 1 if os.path.isfile(substationsPath) else 0
-transmissionPath = os.path.join(data_path_OSM, f'{OSM_source}_transmission_lines.gpkg')
+transmissionPath = os.path.join(data_path_OSM, 'transmission_lines.gpkg')
 transmission = 1 if os.path.isfile(transmissionPath) else 0
-generatorsPath = os.path.join(data_path_OSM, f'{OSM_source}_generators.gpkg')
+generatorsPath = os.path.join(data_path_OSM, 'generators.gpkg')
 generators = 1 if os.path.isfile(generatorsPath) else 0
-plantsPath = os.path.join(data_path_OSM, f'{OSM_source}_plants.gpkg')
+plantsPath = os.path.join(data_path_OSM, 'plants.gpkg')
 plants = 1 if os.path.isfile(plantsPath) else 0
 
 # Additional exclusion polygons
@@ -171,7 +171,7 @@ excluder = atlite.ExclusionContainer(crs=local_crs_obj, res=res)
 if tech_config['landcover_codes']:   
     input_codes = tech_config['landcover_codes']
     for key, value in input_codes.items():
-        excluder.add_raster(landcoverPath, codes=key, buffer=value , crs=global_crs_obj)
+        excluder.add_raster(landcoverPath, codes=key, buffer=value, crs=global_crs_obj)
     info_list_exclusion.append(f"landcover codes which are excluded (code, buffer in meters): {input_codes}")
 else: print('landcover not selected in config.')
 
