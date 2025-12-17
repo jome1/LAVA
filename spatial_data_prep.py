@@ -117,7 +117,7 @@ os.makedirs(output_dir, exist_ok=True)
 
 # Set up logging
 log_file_path = os.path.join(output_dir, "data-prep.log")
-file_handler = logging.FileHandler(log_file_path, mode='w')
+file_handler = logging.FileHandler(log_file_path, mode='a')
 file_handler.setLevel(logging.DEBUG)  # file can record everything
 
 stream_handler = logging.StreamHandler()
