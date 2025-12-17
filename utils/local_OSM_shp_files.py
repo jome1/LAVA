@@ -43,7 +43,7 @@ def process_single_local_osm_layer(config,
         authority = crs.to_authority()
         crs_tag = f"{authority[0]}{authority[1]}" if authority else 'customCRS'
 
-    output_filename = f'geofabrik_{layer_name}.gpkg' #_{region_name}_{crs_tag}
+    output_filename = f'{layer_name}.gpkg' #_{region_name}_{crs_tag}
     output_filepath = os.path.join(output_dir, output_filename)
 
     if os.path.exists(output_filepath):

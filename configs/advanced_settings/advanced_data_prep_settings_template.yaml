@@ -48,7 +48,6 @@ osm_features_config:
 
 
 # north facing pixels to be excluded (pixels with slope bigger X and aspect between Y and Z)
-north_facing_pixels: null
 X: 10
 Y: 310
 Z: 50
@@ -57,4 +56,4 @@ Z: 50
 wdpa_consider_status: ["Adopted", "Designated", "Established", "Inscribed"] #all possibilies: "Adopted", "Designated", "Established", "Inscribed", "Proposed"
 
 
-weather_bias_range: [0.5, 2.0] # Limit min and max bias correction factors to this range
+

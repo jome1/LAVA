@@ -89,7 +89,8 @@ Understanding the repository layout will help in navigating the project and conf
     📁 LAVA/
     ├── 📁 configs
     │   ├── config_template.yaml
-    │   ├── config_advanced_settings_template.yaml
+    │   ├── advanced_settings/
+    │   │   ├── advanced_data_prep_settings_template.py
     │   ├── onshorewind_template.yaml
     │   ├── solar_template.yaml
     │   └── config_snakemake.yaml

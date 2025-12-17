@@ -51,7 +51,7 @@
 # --- Config files ---
 !configs
 !configs/config_template.yaml
-!configs/config_advanced_settings_template.yaml
+!configs/advanced_settings/advanced_data_prep_settings_template.yaml
 !configs/config_snakemake.yaml
 !configs/onshorewind_template.yaml
 !configs/solar_template.yaml
@@ -61,12 +61,12 @@
 !configs/examples/onshorewind_template_china.yaml
 !configs/examples/solar_template_china.yaml
 !configs/examples/suitability_template_china.yaml
-!configs/technologies
-!configs/technologies/HW_distributed_farm.yaml
-!configs/technologies/LW_distributed_farm.yaml
-!configs/technologies/HW_utility_farm.yaml
-!configs/technologies/LW_utility_farm.yaml
-!configs/technologies/CSi.yaml
+!configs/advanced_settings
+!configs/advanced_settings/HW_distributed_farm.yaml
+!configs/advanced_settings/LW_distributed_farm.yaml
+!configs/advanced_settings/HW_utility_farm.yaml
+!configs/advanced_settings/LW_utility_farm.yaml
+!configs/advanced_settings/CSi.yaml
 # --- Snakemake ---
 !snakemake
 !snakemake/Snakefile

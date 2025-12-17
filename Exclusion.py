@@ -1,6 +1,6 @@
 import atlite
+from pyproj import CRS
 import time
-import matplotlib.pyplot as plt
 from scipy.ndimage import label
 import numpy as np
 import json 
@@ -9,7 +9,6 @@ import os
 import argparse
 import geopandas as gpd
 from atlite.gis import shape_availability
-from atlite.gis import shape_availability_reprojected
 import rasterio
 import yaml
 from utils.data_preprocessing import clean_region_name, log_scenario_run
@@ -69,6 +68,8 @@ data_from_DEM = os.path.join(data_path, 'derived_from_DEM')
 OSM_source = config['OSM_source']
 raw_data_path = os.path.join(dirname, 'Raw_Spatial_Data')
 
+
+
 # Load the CRS
 # geo CRS
 with open(os.path.join(data_path, region_name_clean+'_global_CRS.pkl'), 'rb') as file:
@@ -76,6 +77,10 @@ with open(os.path.join(data_path, region_name_clean+'_global_CRS.pkl'), 'rb') as
 # projected CRS
 with open(os.path.join(data_path, region_name_clean+'_local_CRS.pkl'), 'rb') as file:
         local_crs_obj = pickle.load(file)
+# overwrite local CRS if specified in tech_config
+if tech_config['projection_manual'] is not None:
+    local_crs_obj = CRS.from_user_input(tech_config['projection_manual'])
+
 
 print(f'geo CRS: {global_crs_obj}; projected CRS: {local_crs_obj}')
 
@@ -86,22 +91,31 @@ auth = local_crs_obj.to_authority()
 local_crs_tag = ''.join(auth) if auth else local_crs_obj.to_string().replace(":", "_")
 
 
+# load pixel size
+if tech_config['resolution_manual'] is not None:
+    res = tech_config['resolution_manual']
+else:
+    with open(os.path.join(data_path, f'pixel_size_{region_name_clean}_{local_crs_tag}.json'), 'r') as fp:
+        res = json.load(fp)
+
+
 # Paths and existence checks
-landcoverPath = os.path.join(data_path, f"landcover_{config['landcover_source']}_{region_name_clean}_{local_crs_tag}.tif")
+landcoverPath = os.path.join(data_path, f"landcover_{config['landcover_source']}_{region_name_clean}_{global_crs_tag}.tif")
 landcover = 1 if os.path.isfile(landcoverPath) else 0
 demRasterPath = os.path.join(data_path, f'DEM_{region_name_clean}_{global_crs_tag}{resampled}.tif')
 dem = 1 if os.path.isfile(demRasterPath) else 0
 slopeRasterPath = os.path.join(data_from_DEM, f'slope_{region_name_clean}_{global_crs_tag}{resampled}.tif')
 slope = 1 if os.path.isfile(slopeRasterPath) else 0
-terrain_ruggedness_path = os.path.join(data_from_DEM, f'TerrainRuggednessIndex_{region_name_clean}_{local_crs_tag}.tif')
+terrain_ruggedness_path = os.path.join(data_from_DEM, f'TerrainRuggednessIndex_{region_name_clean}_{global_crs_tag}.tif')
 terrain_ruggedness = 1 if os.path.isfile(terrain_ruggedness_path) else 0
 windRasterPath = os.path.join(data_path, f'wind_{region_name_clean}_{global_crs_tag}{resampled}.tif')
 wind = 1 if os.path.isfile(windRasterPath) else 0
 solarRasterPath = os.path.join(data_path, f'solar_{region_name_clean}_{global_crs_tag}{resampled}.tif')
 solar = 1 if os.path.isfile(solarRasterPath) else 0
 
-regionPath = os.path.join(data_path, f'{region_name_clean}_{local_crs_tag}.geojson')
+regionPath = os.path.join(data_path, f'{region_name_clean}_{global_crs_tag}.geojson')
 region = gpd.read_file(regionPath)
+region = region.to_crs(local_crs_obj)
 
 northfacingRasterPath = os.path.join(data_from_DEM, f'north_facing_{region_name_clean}_{global_crs_tag}{resampled}.tif')
 nfacing = 1 if os.path.isfile(northfacingRasterPath) else 0
@@ -113,23 +127,23 @@ forestDensityPath = os.path.join(data_path, f'forest_density_{region_name_clean}
 forestDensity = 1 if os.path.isfile(forestDensityPath) else 0
 
 # OSM
-roadsPath = os.path.join(data_path_OSM, f'{OSM_source}_roads.gpkg')
+roadsPath = os.path.join(data_path_OSM, 'roads.gpkg')
 roads = 1 if os.path.isfile(roadsPath) else 0
-railwaysPath = os.path.join(data_path_OSM, f'{OSM_source}_railways.gpkg')
+railwaysPath = os.path.join(data_path_OSM, 'railways.gpkg')
 railways = 1 if os.path.isfile(railwaysPath) else 0
-airportsPath = os.path.join(data_path_OSM, f'{OSM_source}_airports.gpkg')
+airportsPath = os.path.join(data_path_OSM, 'airports.gpkg')
 airports = 1 if os.path.isfile(airportsPath) else 0
-waterbodiesPath = os.path.join(data_path_OSM, f'{OSM_source}_waterbodies.gpkg')
+waterbodiesPath = os.path.join(data_path_OSM, 'waterbodies.gpkg')
 waterbodies = 1 if os.path.isfile(waterbodiesPath) else 0
-militaryPath = os.path.join(data_path_OSM, f'{OSM_source}_military.gpkg')
+militaryPath = os.path.join(data_path_OSM, 'military.gpkg')
 military = 1 if os.path.isfile(militaryPath) else 0
-substationsPath = os.path.join(data_path_OSM, f'{OSM_source}_substations.gpkg')
+substationsPath = os.path.join(data_path_OSM, 'substations.gpkg')
 substations = 1 if os.path.isfile(substationsPath) else 0
-transmissionPath = os.path.join(data_path_OSM, f'{OSM_source}_transmission_lines.gpkg')
+transmissionPath = os.path.join(data_path_OSM, 'transmission_lines.gpkg')
 transmission = 1 if os.path.isfile(transmissionPath) else 0
-generatorsPath = os.path.join(data_path_OSM, f'{OSM_source}_generators.gpkg')
+generatorsPath = os.path.join(data_path_OSM, 'generators.gpkg')
 generators = 1 if os.path.isfile(generatorsPath) else 0
-plantsPath = os.path.join(data_path_OSM, f'{OSM_source}_plants.gpkg')
+plantsPath = os.path.join(data_path_OSM, 'plants.gpkg')
 plants = 1 if os.path.isfile(plantsPath) else 0
 
 # Additional exclusion polygons
@@ -139,23 +153,12 @@ additional_exclusion_polygons = 1 if os.path.exists(additional_exclusion_polygon
 additional_exclusion_rasters_folderPath = os.path.join(data_path, 'additional_exclusion_rasters')
 additional_exclusion_rasters = 1 if os.path.exists(additional_exclusion_rasters_folderPath) else 0
 
-# load unique land use codes
-with open(os.path.join(data_path, f'landuses_{region_name_clean}.json'), 'r') as fp:
-    landuses = json.load(fp)
-
-# load pixel size
-if tech_config['resolution_manual'] is not None:
-    res = tech_config['resolution_manual']
-else:
-    with open(os.path.join(data_path, f'pixel_size_{region_name_clean}_{local_crs_tag}.json'), 'r') as fp:
-        res = json.load(fp)
-    
+   
 
 #perform exclusions
 
 #raster can be in different CRS than exclusioncontainer, it is co-registered by atlite!
-#vector data needs to be in CRS of exclusioncontainer???
-
+#same applies for vector data
 
 info_list_exclusion = []
 info_list_not_selected = []
@@ -168,7 +171,7 @@ excluder = atlite.ExclusionContainer(crs=local_crs_obj, res=res)
 if tech_config['landcover_codes']:   
     input_codes = tech_config['landcover_codes']
     for key, value in input_codes.items():
-        excluder.add_raster(landcoverPath, codes=key, buffer=value , crs=global_crs_obj)
+        excluder.add_raster(landcoverPath, codes=key, buffer=value, crs=global_crs_obj)
     info_list_exclusion.append(f"landcover codes which are excluded (code, buffer in meters): {input_codes}")
 else: print('landcover not selected in config.')
 
@@ -197,7 +200,7 @@ elif terrain_ruggedness==1 and param is None: info_list_not_selected.append(f"te
 elif terrain_ruggedness==0: info_list_not_available.append(f"terrain_ruggedness")
 
 # add north facing exclusion
-param = config['north_facing_pixels']
+param = tech_config['north_facing_pixels']
 if nfacing==1  and param is not None:
     excluder.add_raster(northfacingRasterPath, codes=1, crs=global_crs_obj)
     info_list_exclusion.append(f'north facing pixels')
@@ -413,12 +416,6 @@ print('\nfollowing data was not selected in config:')
 for item in info_list_not_selected:
     print('- ', item)
 
-# test
-with rasterio.open(landcoverPath, 'r+') as src:
-    transform_lc = src.transform  # Only works in 'r+' or 'w' modes
-    height = src.height
-    width = src.width
-    shape = (height, width)
 
 # calculate available areas
 print('\nperforming exclusions...')
